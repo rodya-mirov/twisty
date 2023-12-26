@@ -1,6 +1,6 @@
-use std::hash::Hash;
 use ahash::{HashMap, HashSet};
 use itertools::Itertools;
+use std::hash::Hash;
 
 pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
     println!("Configuration depth summary for {puzzle_name}:");
@@ -18,12 +18,17 @@ pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
 }
 
 pub trait State: Sized {
-    fn neighbors<Recv>(&self, to_add: &mut Recv) where Recv: FnMut(Self);
+    fn neighbors<Recv>(&self, to_add: &mut Recv)
+    where
+        Recv: FnMut(Self);
 
     fn start() -> Self;
 }
 
-pub fn enumerate_state_space<T>() -> HashMap<u128, u128> where T: State + Hash + Eq + Clone {
+pub fn enumerate_state_space<T>() -> HashMap<u128, u128>
+where
+    T: State + Hash + Eq + Clone,
+{
     let mut counts: HashMap<_, _> = Default::default();
 
     let mut all_seen: HashSet<T> = Default::default();
@@ -37,7 +42,9 @@ pub fn enumerate_state_space<T>() -> HashMap<u128, u128> where T: State + Hash +
         let mut next_stage = HashSet::default();
 
         let mut this_stage_new_configs = 0;
-        let mut recv = |neighbor| {next_stage.insert(neighbor);};
+        let mut recv = |neighbor| {
+            next_stage.insert(neighbor);
+        };
 
         for state in to_process {
             if !all_seen.insert(state.clone()) {
