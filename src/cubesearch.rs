@@ -1,9 +1,11 @@
 use ahash::{HashMap, HashSet};
 use itertools::Itertools;
 use std::hash::Hash;
+use std::time::{Duration, Instant};
 
-pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
+pub fn nice_print(puzzle_name: &str, elapsed: &Duration, counts: &HashMap<u128, u128>) {
     println!("Configuration depth summary for {puzzle_name}:");
+    println!("\tProcessing took {elapsed:?}");
     let total: u128 = counts.values().sum();
 
     let sorted_keys = counts.keys().copied().sorted();
@@ -25,10 +27,12 @@ pub trait State: Sized {
     fn start() -> Self;
 }
 
-pub fn enumerate_state_space<T>() -> HashMap<u128, u128>
+pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
 where
     T: State + Hash + Eq + Clone,
 {
+    let start_time = Instant::now();
+
     let mut counts: HashMap<_, _> = Default::default();
 
     let mut all_seen: HashSet<T> = Default::default();
@@ -65,5 +69,7 @@ where
         to_process = next_stage;
     }
 
-    counts
+    let elapsed = start_time.elapsed();
+
+    (elapsed, counts)
 }
