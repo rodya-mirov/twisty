@@ -11,6 +11,7 @@ mod cuboid_2x3x3;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
+mod mirror_pocket_cube;
 mod skewb;
 
 fn main() {
@@ -38,4 +39,9 @@ fn main() {
     let (elapsed, gn_count) = enumerate_state_space::<skewb::Skewb>();
 
     nice_print("Skewb", &elapsed, &gn_count);
+
+    // TODO: nicer CLI
+    let (elapsed, gn_count) = enumerate_state_space::<mirror_pocket_cube::MirrorPocketCube>();
+
+    nice_print("Mirror Pocket Cube", &elapsed, &gn_count);
 }
