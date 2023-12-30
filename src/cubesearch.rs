@@ -3,9 +3,8 @@ use itertools::Itertools;
 use std::hash::Hash;
 use std::time::{Duration, Instant};
 
-pub fn nice_print(puzzle_name: &str, elapsed: &Duration, counts: &HashMap<u128, u128>) {
+pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
     println!("Configuration depth summary for {puzzle_name}:");
-    println!("\tProcessing took {elapsed:?}");
     let total: u128 = counts.values().sum();
 
     let sorted_keys = counts.keys().copied().sorted();

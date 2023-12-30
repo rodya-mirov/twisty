@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = "0.8.6"
+# Note: significant performance regression 0.8.6 to 0.8.7
+ahash = "=0.8.6"
 itertools = "0.12.0"
 clap = { version = "4.4.11", features = ["derive"] }

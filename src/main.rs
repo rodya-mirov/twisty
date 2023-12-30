@@ -1,7 +1,11 @@
 #![allow(clippy::upper_case_acronyms)]
 
-use crate::cubesearch::nice_print;
+use clap::Parser;
+
 use cubesearch::enumerate_state_space;
+
+use crate::cubesearch::nice_print;
+use crate::mirror_pocket_cube::MirrorPocketCube;
 
 // helper modules
 mod cubesearch;
@@ -14,34 +18,45 @@ mod floppy_1x3x3;
 mod mirror_pocket_cube;
 mod skewb;
 
+#[derive(Parser)]
+enum Alg {
+    Floppy1x2x2,
+    Floppy1x2x3,
+    Floppy1x3x3,
+    Cuboid2x2x3,
+    Skewb,
+    MirrorPocketCube,
+}
+
+impl Alg {
+    fn nice_name(&self) -> &'static str {
+        match self {
+            Alg::Floppy1x2x2 => "Floppy 1x2x2",
+            Alg::Floppy1x2x3 => "Floppy 1x2x3",
+            Alg::Floppy1x3x3 => "Floppy 1x3x3",
+            Alg::Cuboid2x2x3 => "Cuboid 2x2x3",
+            Alg::Skewb => "Skewb",
+            Alg::MirrorPocketCube => "Mirror Pocket Cube",
+        }
+    }
+}
+
 fn main() {
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<floppy_1x2x3::Floppy1x2x3>();
+    let cli = Alg::parse();
 
-    nice_print("Floppy 1x2x3", &elapsed, &gn_count);
+    println!("Computing configuration depth summary for {}", cli.nice_name());
 
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<floppy_1x2x2::Floppy1x2x2>();
+    let (elapsed, gn_count) = match cli {
+        Alg::Floppy1x2x2 => enumerate_state_space::<floppy_1x2x2::Floppy1x2x2>(),
+        Alg::Floppy1x2x3 => enumerate_state_space::<floppy_1x2x3::Floppy1x2x3>(),
+        Alg::Floppy1x3x3 => enumerate_state_space::<floppy_1x3x3::Floppy1x3x3>(),
+        Alg::Cuboid2x2x3 => enumerate_state_space::<cuboid_2x3x3::Cuboid2x3x3>(),
+        Alg::Skewb => enumerate_state_space::<skewb::Skewb>(),
+        Alg::MirrorPocketCube => enumerate_state_space::<MirrorPocketCube>(),
+    };
 
-    nice_print("Floppy 1x2x2", &elapsed, &gn_count);
+    println!("Processing took {elapsed:?}");
 
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<floppy_1x3x3::Floppy1x3x3>();
 
-    nice_print("Floppy 1x3x3", &elapsed, &gn_count);
-
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<cuboid_2x3x3::Cuboid2x3x3>();
-
-    nice_print("Cuboid 2x3x3", &elapsed, &gn_count);
-
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<skewb::Skewb>();
-
-    nice_print("Skewb", &elapsed, &gn_count);
-
-    // TODO: nicer CLI
-    let (elapsed, gn_count) = enumerate_state_space::<mirror_pocket_cube::MirrorPocketCube>();
-
-    nice_print("Mirror Pocket Cube", &elapsed, &gn_count);
+    nice_print(cli.nice_name(), &gn_count);
 }
