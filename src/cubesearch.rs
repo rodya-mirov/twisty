@@ -25,6 +25,19 @@ pub trait State: Sized {
         Recv: FnMut(Self);
 
     fn start() -> Self;
+
+    /// Determine if the given configuration should count as "a" configuration
+    /// This is used for deduplication; even if this returns false, it will still be processed
+    /// in the BFS algorithm, but will not affect the counts per stage, typically because the
+    /// "same" state has been or will be generated in another way, and we don't want to double
+    /// count.
+    ///
+    /// Typically this is not needed; the default implication always returns true and is inlined,
+    /// so should not cause a branch.
+    #[inline(always)]
+    fn should_count_as_config(&self) -> bool {
+        true
+    }
 }
 
 pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
@@ -55,7 +68,10 @@ where
                 continue;
             }
 
-            this_stage_new_configs += 1;
+            if state.should_count_as_config() {
+                this_stage_new_configs += 1;
+            }
+
             state.neighbors(&mut recv);
         }
 

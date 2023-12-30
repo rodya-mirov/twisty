@@ -1,6 +1,6 @@
 use crate::cubesearch::State;
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 enum Cubelet {
     // we leave the small cube in the BUL position, and it never comes up again
     Narrow,
@@ -8,7 +8,7 @@ enum Cubelet {
     BigCube,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 enum Orientation {
     Normal,
     CW,
@@ -38,7 +38,7 @@ impl Orientation {
     }
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 struct PosState {
     ful: Cubelet,
     fur: Cubelet,
@@ -49,7 +49,27 @@ struct PosState {
     bdr: Cubelet,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+impl PosState {
+    /// Twist the cube clockwise around the start corner (BUL)
+    fn twist(&self) -> Self {
+        Self {
+            // inner ring of rotation
+            ful: self.bur,
+            bur: self.bdl,
+            bdl: self.ful,
+
+            // outer ring of rotation
+            fur: self.bdr,
+            bdr: self.fdl,
+            fdl: self.fur,
+
+            // final corner is fixed
+            fdr: self.fdr,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 struct OrientationState {
     ful: Orientation,
     fur: Orientation,
@@ -60,7 +80,29 @@ struct OrientationState {
     bdr: Orientation,
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+impl OrientationState {
+    /// Twist the cube clockwise around the start corner (BUL)
+    fn twist(&self) -> Self {
+        // It is not at all obvious, but this twist does not change any orientations
+        // This just ... experimentally verified?
+        Self {
+            // inner ring of rotation
+            ful: self.bur,
+            bur: self.bdl,
+            bdl: self.ful,
+
+            // outer ring of rotation
+            fur: self.bdr,
+            bdr: self.fdl,
+            fdl: self.fur,
+
+            // final corner is fixed
+            fdr: self.fdr,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 pub struct MirrorPocketCube {
     pos: PosState,
     orr: OrientationState,
@@ -205,6 +247,16 @@ impl CubeState for MirrorPocketCube {
     }
 }
 
+impl MirrorPocketCube {
+    /// Twist the cube clockwise around the start corner (BUL)
+    fn twist(&self) -> Self {
+        Self {
+            pos: self.pos.twist(),
+            orr: self.orr.twist(),
+        }
+    }
+}
+
 impl State for MirrorPocketCube {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
@@ -230,5 +282,18 @@ impl State for MirrorPocketCube {
 
     fn start() -> Self {
         <MirrorPocketCube as CubeState>::start()
+    }
+
+    /// We can't quite prevent duplicate configurations from coming about. At the same time
+    /// we can't simply post-process the duplicates away, because some configurations bring about
+    /// duplicates, and some don't. So we just determine if (a) this configuration comes about
+    /// uniquely, or (b) this configuration is less than its duplicates, according to an arbitrary
+    /// notion of less.
+    fn should_count_as_config(&self) -> bool {
+        let a = self.twist();
+
+        let b = a.twist();
+
+        self <= &a && self <= &b
     }
 }
