@@ -21,7 +21,7 @@ enum CenterCubelet {
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
-pub struct Cuboid2x3x3 {
+pub struct Cuboid2x2x3 {
     // eight corners
     ufl: CornerCubelet,
     ufr: CornerCubelet,
@@ -38,7 +38,7 @@ pub struct Cuboid2x3x3 {
     brc: CenterCubelet,
 }
 
-impl State for Cuboid2x3x3 {
+impl State for Cuboid2x2x3 {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
