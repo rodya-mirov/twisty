@@ -81,6 +81,9 @@ where
         counts.insert(next_distance, this_stage_new_configs);
         next_distance += 1;
 
+        // TODO: find a nice way to enable/disable this with the CLI, without adding a ton of typing
+        // println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
+
         to_process = next_stage;
     }
 

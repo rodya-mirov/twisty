@@ -2,6 +2,7 @@
 
 use std::time::Instant;
 
+use crate::coin_pyraminx::CoinPyraminx;
 use clap::Parser;
 
 use crate::cubesearch::enumerate_state_space;
@@ -19,6 +20,7 @@ mod cubesearch;
 mod orientations;
 
 // actual puzzles
+mod coin_pyraminx;
 mod cuboid_2x2x3;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
@@ -39,6 +41,7 @@ enum Alg {
     PocketCube,
     PyraminxNoTips,
     PyraminxWithTips,
+    CoinPyraminx,
 }
 
 impl Alg {
@@ -53,6 +56,7 @@ impl Alg {
             Alg::PocketCube => "Pocket Cube",
             Alg::PyraminxNoTips => "Pyraminx (No Tips)",
             Alg::PyraminxWithTips => "Pyraminx (With Tips)",
+            Alg::CoinPyraminx => "Coin Pyraminx",
         }
     }
 }
@@ -80,6 +84,7 @@ fn main() {
             let gn_count = pyraminx::gn_count_with_tips(gn_count);
             (start.elapsed(), gn_count)
         }
+        Alg::CoinPyraminx => enumerate_state_space::<CoinPyraminx>(),
     };
 
     println!("Processing took {elapsed:?}");
