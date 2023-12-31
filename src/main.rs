@@ -1,16 +1,17 @@
 #![allow(clippy::upper_case_acronyms)]
 
-use clap::Parser;
 use std::time::Instant;
 
-use cubesearch::enumerate_state_space;
-use cuboid_2x2x3::Cuboid2x2x3;
-use floppy_1x2x2::Floppy1x2x2;
-use floppy_1x2x3::Floppy1x2x3;
-use floppy_1x3x3::Floppy1x3x3;
+use clap::Parser;
 
+use crate::cubesearch::enumerate_state_space;
 use crate::cubesearch::nice_print;
+use crate::cuboid_2x2x3::Cuboid2x2x3;
+use crate::floppy_1x2x2::Floppy1x2x2;
+use crate::floppy_1x2x3::Floppy1x2x3;
+use crate::floppy_1x3x3::Floppy1x3x3;
 use crate::mirror_pocket_cube::MirrorPocketCube;
+use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
 
 // helper modules
@@ -24,6 +25,7 @@ mod floppy_1x3x3;
 mod mirror_pocket_cube;
 mod pyraminx;
 mod skewb;
+mod pocket_cube;
 
 #[derive(Parser)]
 enum Alg {
@@ -33,6 +35,7 @@ enum Alg {
     Cuboid2x2x3,
     Skewb,
     MirrorPocketCube,
+    PocketCube,
     PyraminxNoTips,
     PyraminxWithTips,
 }
@@ -46,6 +49,7 @@ impl Alg {
             Alg::Cuboid2x2x3 => "Cuboid 2x2x3",
             Alg::Skewb => "Skewb",
             Alg::MirrorPocketCube => "Mirror Pocket Cube",
+            Alg::PocketCube => "Pocket Cube",
             Alg::PyraminxNoTips => "Pyraminx (No Tips)",
             Alg::PyraminxWithTips => "Pyraminx (With Tips)",
         }
@@ -67,6 +71,7 @@ fn main() {
         Alg::Cuboid2x2x3 => enumerate_state_space::<Cuboid2x2x3>(),
         Alg::Skewb => enumerate_state_space::<skewb::Skewb>(),
         Alg::MirrorPocketCube => enumerate_state_space::<MirrorPocketCube>(),
+        Alg::PocketCube => enumerate_state_space::<PocketCube>(),
         Alg::PyraminxNoTips => enumerate_state_space::<Pyraminx>(),
         Alg::PyraminxWithTips => {
             let start = Instant::now();
