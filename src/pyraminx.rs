@@ -1,4 +1,5 @@
 use crate::cubesearch::State;
+use crate::orientations::{CornerOrientation, EdgeOrientation};
 use ahash::HashMap;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -9,39 +10,6 @@ enum EdgeCubelet {
     DL,
     DR,
     DF,
-}
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
-enum EdgeOrientation {
-    Normal,
-    Flipped,
-}
-
-impl EdgeOrientation {
-    fn flipped(&self) -> Self {
-        match self {
-            EdgeOrientation::Normal => EdgeOrientation::Flipped,
-            EdgeOrientation::Flipped => EdgeOrientation::Normal,
-        }
-    }
-}
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
-enum CornerOrientation {
-    Normal,
-    CW,
-    CCW,
-}
-
-impl CornerOrientation {
-    #[inline(always)]
-    fn cw(self) -> Self {
-        match self {
-            CornerOrientation::Normal => CornerOrientation::CW,
-            CornerOrientation::CW => CornerOrientation::CCW,
-            CornerOrientation::CCW => CornerOrientation::Normal,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]

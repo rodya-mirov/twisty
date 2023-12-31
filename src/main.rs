@@ -16,6 +16,7 @@ use crate::pyraminx::Pyraminx;
 
 // helper modules
 mod cubesearch;
+mod orientations;
 
 // actual puzzles
 mod cuboid_2x2x3;
@@ -23,9 +24,9 @@ mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
 mod mirror_pocket_cube;
+mod pocket_cube;
 mod pyraminx;
 mod skewb;
-mod pocket_cube;
 
 #[derive(Parser)]
 enum Alg {

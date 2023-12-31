@@ -1,4 +1,5 @@
 use crate::cubesearch::State;
+use crate::orientations::EdgeOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CornerCubelet {
@@ -14,9 +15,7 @@ pub struct Floppy1x2x3 {
     ur: CornerCubelet,
     dl: CornerCubelet,
     dr: CornerCubelet,
-    // true is "white is forward", false is "yellow is forward"
-    // making a whole enum for this seemed dumb
-    rc_solved: bool,
+    rc_solved: EdgeOrientation,
 }
 
 impl State for Floppy1x2x3 {
@@ -57,7 +56,7 @@ impl State for Floppy1x2x3 {
             ur: dr,
             dl,
             dr: ur,
-            rc_solved: !rc_solved,
+            rc_solved: rc_solved.flipped(),
         });
     }
 
@@ -67,7 +66,7 @@ impl State for Floppy1x2x3 {
             ur: CornerCubelet::UR,
             dl: CornerCubelet::DL,
             dr: CornerCubelet::DR,
-            rc_solved: true,
+            rc_solved: EdgeOrientation::Normal,
         }
     }
 }

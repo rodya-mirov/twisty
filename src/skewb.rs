@@ -1,4 +1,5 @@
 use crate::cubesearch::State;
+use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CornerCubelet {
@@ -10,33 +11,6 @@ enum CornerCubelet {
     FDR,
     BDL,
     BDR,
-}
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
-enum CornerOrientation {
-    Normal,
-    CW,
-    CCW,
-}
-
-impl CornerOrientation {
-    #[inline(always)]
-    fn cw(self) -> Self {
-        match self {
-            CornerOrientation::Normal => CornerOrientation::CW,
-            CornerOrientation::CW => CornerOrientation::CCW,
-            CornerOrientation::CCW => CornerOrientation::Normal,
-        }
-    }
-
-    #[inline(always)]
-    fn ccw(self) -> Self {
-        match self {
-            CornerOrientation::Normal => CornerOrientation::CCW,
-            CornerOrientation::CCW => CornerOrientation::CW,
-            CornerOrientation::CW => CornerOrientation::Normal,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]

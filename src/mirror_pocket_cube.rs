@@ -8,6 +8,7 @@ enum Cubelet {
     BigCube,
 }
 
+/// Mirror-specific variant of CornerOrientation to include a "Fixed" variant
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 enum Orientation {
     Normal,

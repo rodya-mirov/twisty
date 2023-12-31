@@ -1,4 +1,5 @@
 use crate::cubesearch::State;
+use crate::orientations::EdgeOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CornerCubelet {
@@ -14,12 +15,10 @@ pub struct Floppy1x3x3 {
     ur: CornerCubelet,
     dl: CornerCubelet,
     dr: CornerCubelet,
-    // true is "white is forward", false is "yellow is forward"
-    // making a whole enum for this seemed dumb
-    rc_solved: bool,
-    uc_solved: bool,
-    dc_solved: bool,
-    lc_solved: bool,
+    rc_solved: EdgeOrientation,
+    uc_solved: EdgeOrientation,
+    dc_solved: EdgeOrientation,
+    lc_solved: EdgeOrientation,
 }
 
 impl State for Floppy1x3x3 {
@@ -45,7 +44,7 @@ impl State for Floppy1x3x3 {
             ur: ul,
             dl,
             dr,
-            uc_solved: !uc_solved,
+            uc_solved: uc_solved.flipped(),
             lc_solved,
             rc_solved,
             dc_solved,
@@ -60,7 +59,7 @@ impl State for Floppy1x3x3 {
             uc_solved,
             lc_solved,
             rc_solved,
-            dc_solved: !dc_solved,
+            dc_solved: dc_solved.flipped(),
         });
 
         // L2
@@ -71,7 +70,7 @@ impl State for Floppy1x3x3 {
             dr,
 
             uc_solved,
-            lc_solved: !lc_solved,
+            lc_solved: lc_solved.flipped(),
             rc_solved,
             dc_solved,
         });
@@ -84,7 +83,7 @@ impl State for Floppy1x3x3 {
             dr: ur,
             uc_solved,
             lc_solved,
-            rc_solved: !rc_solved,
+            rc_solved: rc_solved.flipped(),
             dc_solved,
         });
     }
@@ -95,10 +94,10 @@ impl State for Floppy1x3x3 {
             ur: CornerCubelet::UR,
             dl: CornerCubelet::DL,
             dr: CornerCubelet::DR,
-            rc_solved: true,
-            lc_solved: true,
-            uc_solved: true,
-            dc_solved: true,
+            rc_solved: EdgeOrientation::Normal,
+            lc_solved: EdgeOrientation::Normal,
+            uc_solved: EdgeOrientation::Normal,
+            dc_solved: EdgeOrientation::Normal,
         }
     }
 }

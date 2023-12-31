@@ -1,4 +1,5 @@
 use crate::cubesearch::State;
+use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 enum Cubelet {
@@ -10,33 +11,6 @@ enum Cubelet {
     UBR,
     UFL,
     UFR,
-}
-
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
-enum Orientation {
-    Normal,
-    CW,
-    CCW,
-}
-
-impl Orientation {
-    #[inline(always)]
-    fn cw(self) -> Self {
-        match self {
-            Orientation::Normal => Orientation::CW,
-            Orientation::CW => Orientation::CCW,
-            Orientation::CCW => Orientation::Normal,
-        }
-    }
-
-    #[inline(always)]
-    fn ccw(self) -> Self {
-        match self {
-            Orientation::Normal => Orientation::CCW,
-            Orientation::CCW => Orientation::CW,
-            Orientation::CW => Orientation::Normal,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
@@ -54,13 +28,13 @@ struct PosState {
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 struct OrientationState {
     // DBL is fixed and has no need here
-    dbr: Orientation,
-    dfl: Orientation,
-    dfr: Orientation,
-    ubl: Orientation,
-    ubr: Orientation,
-    ufl: Orientation,
-    ufr: Orientation,
+    dbr: CornerOrientation,
+    dfl: CornerOrientation,
+    dfr: CornerOrientation,
+    ubl: CornerOrientation,
+    ubr: CornerOrientation,
+    ufl: CornerOrientation,
+    ufr: CornerOrientation,
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
@@ -131,13 +105,13 @@ impl CubeState for OrientationState {
     fn start() -> Self {
         Self {
             // DBL is fixed
-            dbr: Orientation::Normal,
-            dfl: Orientation::Normal,
-            dfr: Orientation::Normal,
-            ubl: Orientation::Normal,
-            ubr: Orientation::Normal,
-            ufl: Orientation::Normal,
-            ufr: Orientation::Normal,
+            dbr: CornerOrientation::Normal,
+            dfl: CornerOrientation::Normal,
+            dfr: CornerOrientation::Normal,
+            ubl: CornerOrientation::Normal,
+            ubr: CornerOrientation::Normal,
+            ufl: CornerOrientation::Normal,
+            ufr: CornerOrientation::Normal,
         }
     }
 
@@ -211,8 +185,8 @@ impl CubeState for PocketCube {
 
 impl State for PocketCube {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
-        where
-            Recv: FnMut(Self),
+    where
+        Recv: FnMut(Self),
     {
         // three moves -- R/F/D -- with three orientations each (1/2/rev)
 
