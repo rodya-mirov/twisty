@@ -2,7 +2,7 @@
 
 use std::time::Instant;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 use crate::coin_pyraminx::CoinPyraminx;
 use crate::cubesearch::enumerate_state_space;
@@ -15,9 +15,11 @@ use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
 
-// helper modules
-mod cubesearch;
+// reusable state modules
 mod orientations;
+
+// reusable algorithm logic
+mod cubesearch;
 
 // actual puzzles
 mod coin_pyraminx;
@@ -31,6 +33,18 @@ mod pyraminx;
 mod skewb;
 
 #[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    #[command(subcommand)]
+    ConfigDepth(Alg),
+}
+
+#[derive(Subcommand, Copy, Clone, PartialEq, Eq)]
 enum Alg {
     Floppy1x2x2,
     Floppy1x2x3,
@@ -61,15 +75,13 @@ impl Alg {
     }
 }
 
-fn main() {
-    let cli = Alg::parse();
-
+fn configuration_depth(alg: Alg) {
     println!(
         "Computing configuration depth summary for {}",
-        cli.nice_name()
+        alg.nice_name()
     );
 
-    let (elapsed, gn_count) = match cli {
+    let (elapsed, gn_count) = match alg {
         Alg::Floppy1x2x2 => enumerate_state_space::<Floppy1x2x2>(),
         Alg::Floppy1x2x3 => enumerate_state_space::<Floppy1x2x3>(),
         Alg::Floppy1x3x3 => enumerate_state_space::<Floppy1x3x3>(),
@@ -89,5 +101,13 @@ fn main() {
 
     println!("Processing took {elapsed:?}");
 
-    nice_print(cli.nice_name(), &gn_count);
+    nice_print(alg.nice_name(), &gn_count);
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    match cli.command {
+        Commands::ConfigDepth(alg) => configuration_depth(alg),
+    }
 }
