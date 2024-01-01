@@ -244,6 +244,12 @@ impl PyraminxState for Pyraminx {
 }
 
 impl State for Pyraminx {
+    type UniqueKey = Self;
+
+    fn uniq_key(&self) -> Self {
+        self.clone()
+    }
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

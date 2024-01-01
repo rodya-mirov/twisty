@@ -7,6 +7,17 @@ pub enum CornerOrientation {
 }
 
 impl CornerOrientation {
+    /// A simple cast to u8 for encoding. Guaranteed to have minimal size, that is,
+    /// using at most two bits.
+    #[inline(always)]
+    pub fn as_u8_two_bits(self) -> u8 {
+        match self {
+            CornerOrientation::Normal => 0,
+            CornerOrientation::CW => 1,
+            CornerOrientation::CCW => 2,
+        }
+    }
+
     #[inline(always)]
     pub fn cw(self) -> Self {
         match self {

@@ -9,6 +9,19 @@ enum FaceFacelet {
     R,
 }
 
+impl FaceFacelet {
+    /// No logic to it, but encodes a facelet in two bits.
+    #[inline(always)]
+    fn as_u8_two_bits(self) -> u8 {
+        match self {
+            FaceFacelet::F => 0,
+            FaceFacelet::D => 1,
+            FaceFacelet::L => 2,
+            FaceFacelet::R => 3,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Ord, PartialOrd)]
 pub struct CoinPyraminx {
     // we envision the cube as having a flat face in front of us and a flat face down,
@@ -132,6 +145,42 @@ impl CoinPyraminx {
 }
 
 impl State for CoinPyraminx {
+    type UniqueKey = u32;
+
+    fn uniq_key(&self) -> u32 {
+        let mut out: u32 = 0;
+
+        debug_assert!(8 + 6 + 6 + 6 < 32, "Bitpacking should fit");
+
+        // 8 bits for the axials
+        out = (out << 2) | self.r_axial.as_u8_two_bits() as u32;
+        out = (out << 2) | self.l_axial.as_u8_two_bits() as u32;
+        out = (out << 2) | self.b_axial.as_u8_two_bits() as u32;
+        out = (out << 2) | self.u_axial.as_u8_two_bits() as u32;
+
+        // 6 more bits for F face
+        out = (out << 2) | self.fr.as_u8_two_bits() as u32;
+        out = (out << 2) | self.fl.as_u8_two_bits() as u32;
+        out = (out << 2) | self.fu.as_u8_two_bits() as u32;
+
+        // 6 more bits for L face
+        out = (out << 2) | self.ll.as_u8_two_bits() as u32;
+        out = (out << 2) | self.lb.as_u8_two_bits() as u32;
+        out = (out << 2) | self.lu.as_u8_two_bits() as u32;
+
+        // 6 more bits for R face
+        out = (out << 2) | self.rr.as_u8_two_bits() as u32;
+        out = (out << 2) | self.rb.as_u8_two_bits() as u32;
+        out = (out << 2) | self.ru.as_u8_two_bits() as u32;
+
+        // 6 more bits for D face
+        out = (out << 2) | self.db.as_u8_two_bits() as u32;
+        out = (out << 2) | self.dl.as_u8_two_bits() as u32;
+        out = (out << 2) | self.dr.as_u8_two_bits() as u32;
+
+        out
+    }
+    
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

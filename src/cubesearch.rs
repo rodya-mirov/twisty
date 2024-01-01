@@ -19,6 +19,8 @@ pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
 }
 
 pub trait State: Sized {
+    type UniqueKey: 'static + Hash + Eq + PartialEq;
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self);
@@ -37,6 +39,8 @@ pub trait State: Sized {
     fn should_count_as_config(&self) -> bool {
         true
     }
+
+    fn uniq_key(&self) -> Self::UniqueKey;
 }
 
 pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
@@ -47,7 +51,7 @@ where
 
     let mut counts: HashMap<_, _> = Default::default();
 
-    let mut all_seen: HashSet<T> = Default::default();
+    let mut all_seen: HashSet<_> = Default::default();
 
     let mut next_distance = 0;
     let mut to_process: Vec<T> = Vec::default();
@@ -62,7 +66,7 @@ where
         };
 
         for state in to_process.iter() {
-            if !all_seen.insert(state.clone()) {
+            if !all_seen.insert(state.uniq_key()) {
                 continue;
             }
 
@@ -81,7 +85,7 @@ where
         next_distance += 1;
 
         // TODO: find a nice way to enable/disable this with the CLI, without adding a ton of typing
-        // println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
+        println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
 
         to_process.clear();
         std::mem::swap(&mut to_process, &mut next_stage);

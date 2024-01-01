@@ -286,6 +286,12 @@ impl SkewbState for Skewb {
 }
 
 impl State for Skewb {
+    type UniqueKey = Self;
+
+    fn uniq_key(&self) -> Self {
+        self.clone()
+    }
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

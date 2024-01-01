@@ -19,6 +19,12 @@ pub struct Floppy1x2x3 {
 }
 
 impl State for Floppy1x2x3 {
+    type UniqueKey = Self;
+
+    fn uniq_key(&self) -> Self {
+        self.clone()
+    }
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
