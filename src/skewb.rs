@@ -1,4 +1,4 @@
-use crate::cubesearch::SimpleState;
+use crate::cubesearch::State;
 use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -13,6 +13,21 @@ enum CornerCubelet {
     BDR,
 }
 
+impl CornerCubelet {
+    #[inline(always)]
+    fn as_u8_three_bits(&self) -> u8 {
+        match self {
+            CornerCubelet::FUL => 0,
+            CornerCubelet::FUR => 1,
+            CornerCubelet::BUR => 2,
+            CornerCubelet::FDL => 3,
+            CornerCubelet::FDR => 4,
+            CornerCubelet::BDL => 5,
+            CornerCubelet::BDR => 6,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CenterCubelet {
     U,
@@ -21,6 +36,19 @@ enum CenterCubelet {
     L,
     R,
     B,
+}
+
+impl CenterCubelet {
+    fn as_u8_three_bits(&self) -> u8 {
+        match self {
+            CenterCubelet::U => 0,
+            CenterCubelet::D => 1,
+            CenterCubelet::F => 2,
+            CenterCubelet::L => 3,
+            CenterCubelet::R => 4,
+            CenterCubelet::B => 5,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -285,7 +313,9 @@ impl SkewbState for Skewb {
     }
 }
 
-impl SimpleState for Skewb {
+impl State for Skewb {
+    type UniqueKey = u64;
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
@@ -311,5 +341,37 @@ impl SimpleState for Skewb {
 
     fn start() -> Self {
         <Skewb as SkewbState>::start()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        let mut out: u64 = 0;
+
+        // can't fit it into 32 bits
+        debug_assert!(7 * 5 + 6 * 3 < 64, "State should fit into 64 bits");
+
+        out = (out << 3) | self.corner_pos.fdr.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.fdl.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.ful.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.fur.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.bdr.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.bur.as_u8_three_bits() as u64;
+        out = (out << 3) | self.corner_pos.bdl.as_u8_three_bits() as u64;
+
+        out = (out << 2) | self.corner_orr.fdr.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.fdl.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.ful.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.fur.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.bdr.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.bur.as_u8_two_bits() as u64;
+        out = (out << 2) | self.corner_orr.bdl.as_u8_two_bits() as u64;
+
+        out = (out << 3) | self.centers.u.as_u8_three_bits() as u64;
+        out = (out << 3) | self.centers.d.as_u8_three_bits() as u64;
+        out = (out << 3) | self.centers.f.as_u8_three_bits() as u64;
+        out = (out << 3) | self.centers.b.as_u8_three_bits() as u64;
+        out = (out << 3) | self.centers.r.as_u8_three_bits() as u64;
+        out = (out << 3) | self.centers.l.as_u8_three_bits() as u64;
+
+        out
     }
 }

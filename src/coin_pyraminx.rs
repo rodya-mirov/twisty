@@ -180,7 +180,7 @@ impl State for CoinPyraminx {
 
         out
     }
-    
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

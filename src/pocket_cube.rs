@@ -1,4 +1,4 @@
-use crate::cubesearch::SimpleState;
+use crate::cubesearch::State;
 use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
@@ -11,6 +11,21 @@ enum Cubelet {
     UBR,
     UFL,
     UFR,
+}
+
+impl Cubelet {
+    #[inline(always)]
+    fn as_u8_three_bits(&self) -> u8 {
+        match self {
+            Cubelet::DBR => 0,
+            Cubelet::DFL => 1,
+            Cubelet::DFR => 2,
+            Cubelet::UBL => 3,
+            Cubelet::UBR => 4,
+            Cubelet::UFL => 5,
+            Cubelet::UFR => 6,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
@@ -183,7 +198,9 @@ impl CubeState for PocketCube {
     }
 }
 
-impl SimpleState for PocketCube {
+impl State for PocketCube {
+    type UniqueKey = u64;
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
@@ -208,5 +225,30 @@ impl SimpleState for PocketCube {
 
     fn start() -> Self {
         <PocketCube as CubeState>::start()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        let mut out: u64 = 0;
+
+        // can't _quite_ fit it into 32 bits
+        debug_assert!(7 * 3 + 7 * 2 < 64, "State should fit into 64 bits");
+
+        out = (out << 3) | self.pos.ufl.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.ufr.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.dfl.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.dfr.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.ubl.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.ubr.as_u8_three_bits() as u64;
+        out = (out << 3) | self.pos.dbr.as_u8_three_bits() as u64;
+
+        out = (out << 2) | self.orr.ufl.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.ufr.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.dfl.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.dfr.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.ubl.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.ubr.as_u8_two_bits() as u64;
+        out = (out << 2) | self.orr.dbr.as_u8_two_bits() as u64;
+
+        out
     }
 }

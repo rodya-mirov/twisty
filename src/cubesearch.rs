@@ -51,8 +51,8 @@ pub trait State: Sized {
 
 pub trait SimpleState: Sized + Hash + Eq + PartialEq + Clone + 'static {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
-        where
-            Recv: FnMut(Self);
+    where
+        Recv: FnMut(Self);
 
     fn start() -> Self;
 
@@ -70,10 +70,13 @@ pub trait SimpleState: Sized + Hash + Eq + PartialEq + Clone + 'static {
     }
 }
 
-impl <T: SimpleState> State for T {
+impl<T: SimpleState> State for T {
     type UniqueKey = Self;
 
-    fn neighbors<Recv>(&self, to_add: &mut Recv) where Recv: FnMut(Self) {
+    fn neighbors<Recv>(&self, to_add: &mut Recv)
+    where
+        Recv: FnMut(Self),
+    {
         <Self as SimpleState>::neighbors(self, to_add)
     }
 
