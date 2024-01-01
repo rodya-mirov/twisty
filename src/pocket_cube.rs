@@ -1,4 +1,4 @@
-use crate::cubesearch::State;
+use crate::cubesearch::SimpleState;
 use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
@@ -183,13 +183,7 @@ impl CubeState for PocketCube {
     }
 }
 
-impl State for PocketCube {
-    type UniqueKey = Self;
-
-    fn uniq_key(&self) -> Self {
-        self.clone()
-    }
-
+impl SimpleState for PocketCube {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

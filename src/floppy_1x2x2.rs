@@ -1,4 +1,4 @@
-use crate::cubesearch::State;
+use crate::cubesearch::SimpleState;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CornerCubelet {
@@ -14,13 +14,7 @@ pub struct Floppy1x2x2 {
     dr: CornerCubelet,
 }
 
-impl State for Floppy1x2x2 {
-    type UniqueKey = Self;
-
-    fn uniq_key(&self) -> Self {
-        self.clone()
-    }
-
+impl SimpleState for Floppy1x2x2 {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

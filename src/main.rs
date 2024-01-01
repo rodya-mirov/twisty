@@ -2,9 +2,9 @@
 
 use std::time::Instant;
 
-use crate::coin_pyraminx::CoinPyraminx;
 use clap::Parser;
 
+use crate::coin_pyraminx::CoinPyraminx;
 use crate::cubesearch::enumerate_state_space;
 use crate::cubesearch::nice_print;
 use crate::cuboid_2x2x3::Cuboid2x2x3;

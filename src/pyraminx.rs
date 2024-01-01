@@ -1,6 +1,7 @@
-use crate::cubesearch::State;
-use crate::orientations::{CornerOrientation, EdgeOrientation};
 use ahash::HashMap;
+
+use crate::cubesearch::SimpleState;
+use crate::orientations::{CornerOrientation, EdgeOrientation};
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum EdgeCubelet {
@@ -243,13 +244,7 @@ impl PyraminxState for Pyraminx {
     }
 }
 
-impl State for Pyraminx {
-    type UniqueKey = Self;
-
-    fn uniq_key(&self) -> Self {
-        self.clone()
-    }
-
+impl SimpleState for Pyraminx {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

@@ -1,4 +1,4 @@
-use crate::cubesearch::State;
+use crate::cubesearch::SimpleState;
 use crate::orientations::CornerOrientation;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -285,13 +285,7 @@ impl SkewbState for Skewb {
     }
 }
 
-impl State for Skewb {
-    type UniqueKey = Self;
-
-    fn uniq_key(&self) -> Self {
-        self.clone()
-    }
-
+impl SimpleState for Skewb {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

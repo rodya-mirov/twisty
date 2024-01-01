@@ -1,4 +1,4 @@
-use crate::cubesearch::State;
+use crate::cubesearch::SimpleState;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 enum Cubelet {
@@ -258,13 +258,7 @@ impl MirrorPocketCube {
     }
 }
 
-impl State for MirrorPocketCube {
-    type UniqueKey = Self;
-
-    fn uniq_key(&self) -> Self {
-        self.clone()
-    }
-
+impl SimpleState for MirrorPocketCube {
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),

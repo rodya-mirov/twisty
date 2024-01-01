@@ -1,7 +1,8 @@
-use ahash::{HashMap, HashSet};
-use itertools::Itertools;
 use std::hash::Hash;
 use std::time::{Duration, Instant};
+
+use ahash::{HashMap, HashSet};
+use itertools::Itertools;
 
 pub fn nice_print(puzzle_name: &str, counts: &HashMap<u128, u128>) {
     println!("Configuration depth summary for {puzzle_name}:");
@@ -40,7 +41,49 @@ pub trait State: Sized {
         true
     }
 
+    /// A unique key identifying a puzzle state. In many cases this can just be the puzzle state
+    /// itself, but it can be more performant to bitpack it manually here, so that the bitpacked
+    /// version can be stored and compared against.
+    ///
+    /// This is primarily a performance optimization.
     fn uniq_key(&self) -> Self::UniqueKey;
+}
+
+pub trait SimpleState: Sized + Hash + Eq + PartialEq + Clone + 'static {
+    fn neighbors<Recv>(&self, to_add: &mut Recv)
+        where
+            Recv: FnMut(Self);
+
+    fn start() -> Self;
+
+    /// Determine if the given configuration should count as "a" configuration
+    /// This is used for deduplication; even if this returns false, it will still be processed
+    /// in the BFS algorithm, but will not affect the counts per stage, typically because the
+    /// "same" state has been or will be generated in another way, and we don't want to double
+    /// count.
+    ///
+    /// Typically this is not needed; the default implication always returns true and is inlined,
+    /// so should not cause a branch.
+    #[inline(always)]
+    fn should_count_as_config(&self) -> bool {
+        true
+    }
+}
+
+impl <T: SimpleState> State for T {
+    type UniqueKey = Self;
+
+    fn neighbors<Recv>(&self, to_add: &mut Recv) where Recv: FnMut(Self) {
+        <Self as SimpleState>::neighbors(self, to_add)
+    }
+
+    fn start() -> Self {
+        <Self as SimpleState>::start()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        self.clone()
+    }
 }
 
 pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
@@ -85,7 +128,7 @@ where
         next_distance += 1;
 
         // TODO: find a nice way to enable/disable this with the CLI, without adding a ton of typing
-        println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
+        // println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
 
         to_process.clear();
         std::mem::swap(&mut to_process, &mut next_stage);
