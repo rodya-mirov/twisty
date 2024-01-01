@@ -50,19 +50,18 @@ where
     let mut all_seen: HashSet<T> = Default::default();
 
     let mut next_distance = 0;
-    let mut to_process: HashSet<T> = HashSet::default();
+    let mut to_process: Vec<T> = Vec::default();
+    let mut next_stage: Vec<T> = Vec::default();
 
-    to_process.insert(T::start());
+    to_process.push(T::start());
 
     loop {
-        let mut next_stage = HashSet::default();
-
         let mut this_stage_new_configs = 0;
         let mut recv = |neighbor| {
-            next_stage.insert(neighbor);
+            next_stage.push(neighbor);
         };
 
-        for state in to_process {
+        for state in to_process.iter() {
             if !all_seen.insert(state.clone()) {
                 continue;
             }
@@ -84,7 +83,8 @@ where
         // TODO: find a nice way to enable/disable this with the CLI, without adding a ton of typing
         // println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
 
-        to_process = next_stage;
+        to_process.clear();
+        std::mem::swap(&mut to_process, &mut next_stage);
     }
 
     let elapsed = start_time.elapsed();
