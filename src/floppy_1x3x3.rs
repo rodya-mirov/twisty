@@ -1,5 +1,11 @@
 use crate::cubesearch::SimpleState;
+use crate::idasearch::Solvable;
+use crate::moves::CanReverse;
 use crate::orientations::EdgeOrientation;
+use crate::random_helpers;
+use crate::scrambles::RandomInit;
+use derive_more::Display;
+use rand::Rng;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 enum CornerCubelet {
@@ -21,74 +27,8 @@ pub struct Floppy1x3x3 {
     lc_solved: EdgeOrientation,
 }
 
-impl SimpleState for Floppy1x3x3 {
-    fn neighbors<Recv>(&self, to_add: &mut Recv)
-    where
-        Recv: FnMut(Self),
-    {
-        // three neighbors: U2, R2, D2
-        let Self {
-            ul,
-            ur,
-            dl,
-            dr,
-            rc_solved,
-            lc_solved,
-            dc_solved,
-            uc_solved,
-        } = *self;
-
-        // U2
-        to_add(Self {
-            ul: ur,
-            ur: ul,
-            dl,
-            dr,
-            uc_solved: uc_solved.flipped(),
-            lc_solved,
-            rc_solved,
-            dc_solved,
-        });
-
-        // D2
-        to_add(Self {
-            ul,
-            ur,
-            dl: dr,
-            dr: dl,
-            uc_solved,
-            lc_solved,
-            rc_solved,
-            dc_solved: dc_solved.flipped(),
-        });
-
-        // L2
-        to_add(Self {
-            ul: dl,
-            dl: ul,
-            ur,
-            dr,
-
-            uc_solved,
-            lc_solved: lc_solved.flipped(),
-            rc_solved,
-            dc_solved,
-        });
-
-        // R2
-        to_add(Self {
-            ul,
-            ur: dr,
-            dl,
-            dr: ur,
-            uc_solved,
-            lc_solved,
-            rc_solved: rc_solved.flipped(),
-            dc_solved,
-        });
-    }
-
-    fn start() -> Self {
+impl Floppy1x3x3 {
+    fn solved() -> Self {
         Self {
             ul: CornerCubelet::UL,
             ur: CornerCubelet::UR,
@@ -99,5 +39,130 @@ impl SimpleState for Floppy1x3x3 {
             uc_solved: EdgeOrientation::Normal,
             dc_solved: EdgeOrientation::Normal,
         }
+    }
+
+    fn u2(&self) -> Self {
+        Self {
+            ul: self.ur,
+            ur: self.ul,
+            uc_solved: self.uc_solved.flipped(),
+            ..*self
+        }
+    }
+
+    fn d2(&self) -> Self {
+        Self {
+            dl: self.dr,
+            dr: self.dl,
+            dc_solved: self.dc_solved.flipped(),
+            ..*self
+        }
+    }
+
+    fn r2(&self) -> Self {
+        Self {
+            ur: self.dr,
+            dr: self.ur,
+            rc_solved: self.rc_solved.flipped(),
+            ..*self
+        }
+    }
+
+    fn l2(&self) -> Self {
+        Self {
+            ul: self.dl,
+            dl: self.ul,
+            lc_solved: self.lc_solved.flipped(),
+            ..*self
+        }
+    }
+}
+
+impl SimpleState for Floppy1x3x3 {
+    fn neighbors<Recv>(&self, to_add: &mut Recv)
+    where
+        Recv: FnMut(Self),
+    {
+        to_add(self.l2());
+        to_add(self.r2());
+        to_add(self.u2());
+        to_add(self.d2());
+    }
+
+    fn start() -> Self {
+        Self::solved()
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Display, Hash)]
+pub enum Move {
+    R2,
+    U2,
+    D2,
+    L2,
+}
+
+impl CanReverse for Move {
+    fn reverse(&self) -> Self {
+        // all moves are self-inverse, which is nice
+        *self
+    }
+}
+
+impl RandomInit for Floppy1x3x3 {
+    fn random_state<R: Rng>(r: &mut R) -> Self {
+        // the total parity of the position permutation ...
+        let (cubelets, pos_parity) = random_helpers::shuffle_any(
+            r,
+            &[
+                CornerCubelet::UL,
+                CornerCubelet::UR,
+                CornerCubelet::DL,
+                CornerCubelet::DR,
+            ],
+        );
+        // ... must match the total parity of the center orientations
+        let orientations = random_helpers::flips_with_parity(r, 4, pos_parity);
+
+        Self {
+            ul: cubelets[0],
+            ur: cubelets[1],
+            dl: cubelets[2],
+            dr: cubelets[3],
+
+            lc_solved: orientations[0],
+            rc_solved: orientations[1],
+            uc_solved: orientations[2],
+            dc_solved: orientations[3],
+        }
+    }
+}
+
+impl Solvable for Floppy1x3x3 {
+    type Move = Move;
+
+    fn is_solved(&self) -> bool {
+        *self == Self::solved()
+    }
+
+    fn available_moves(&self) -> impl IntoIterator<Item = Self::Move> {
+        [Move::D2, Move::U2, Move::L2, Move::R2]
+    }
+
+    fn is_redundant(last_move: Self::Move, next_move: Self::Move) -> bool {
+        last_move == next_move
+    }
+
+    fn apply(&self, m: Self::Move) -> Self {
+        match m {
+            Move::R2 => self.r2(),
+            Move::U2 => self.u2(),
+            Move::D2 => self.d2(),
+            Move::L2 => self.l2(),
+        }
+    }
+
+    fn max_fuel() -> usize {
+        8
     }
 }

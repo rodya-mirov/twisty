@@ -1,3 +1,5 @@
+use rand::Rng;
+
 /// A 3-variant orientation enum which matches corners on many common types of twist puzzles.
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
 pub enum CornerOrientation {
@@ -50,6 +52,14 @@ impl EdgeOrientation {
         match self {
             EdgeOrientation::Normal => EdgeOrientation::Flipped,
             EdgeOrientation::Flipped => EdgeOrientation::Normal,
+        }
+    }
+
+    pub fn random<R: Rng>(r: &mut R) -> Self {
+        if r.gen_bool(0.5) {
+            Self::Normal
+        } else {
+            Self::Flipped
         }
     }
 }

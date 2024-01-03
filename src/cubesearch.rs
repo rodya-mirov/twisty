@@ -1,6 +1,7 @@
 use std::hash::Hash;
 use std::time::{Duration, Instant};
 
+use crate::idasearch::Solvable;
 use ahash::{HashMap, HashSet};
 use itertools::Itertools;
 
@@ -47,6 +48,32 @@ pub trait State: Sized {
     ///
     /// This is primarily a performance optimization.
     fn uniq_key(&self) -> Self::UniqueKey;
+}
+
+/// Simple trait to implement if you have a solvable implementation already, and want a State
+/// implementation for free
+pub trait SimpleStartState: Sized {
+    fn start() -> Self;
+}
+
+impl<T> SimpleState for T
+where
+    T: SimpleStartState + Solvable + Sized + Hash + Eq + PartialEq + Clone + 'static,
+{
+    fn neighbors<Recv>(&self, to_add: &mut Recv)
+    where
+        Recv: FnMut(Self),
+    {
+        let moves = self.available_moves();
+
+        for m in moves {
+            to_add(self.apply(m));
+        }
+    }
+
+    fn start() -> Self {
+        <Self as SimpleStartState>::start()
+    }
 }
 
 pub trait SimpleState: Sized + Hash + Eq + PartialEq + Clone + 'static {
