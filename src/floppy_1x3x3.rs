@@ -1,13 +1,15 @@
+use derive_more::Display;
+use enum_iterator::{all, Sequence};
+use rand::Rng;
+
 use crate::cubesearch::SimpleState;
 use crate::idasearch::Solvable;
 use crate::moves::CanReverse;
 use crate::orientations::EdgeOrientation;
 use crate::random_helpers;
 use crate::scrambles::RandomInit;
-use derive_more::Display;
-use rand::Rng;
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Sequence)]
 enum CornerCubelet {
     UL,
     UR,
@@ -114,12 +116,7 @@ impl RandomInit for Floppy1x3x3 {
         // the total parity of the position permutation ...
         let (cubelets, pos_parity) = random_helpers::shuffle_any(
             r,
-            &[
-                CornerCubelet::UL,
-                CornerCubelet::UR,
-                CornerCubelet::DL,
-                CornerCubelet::DR,
-            ],
+            all::<CornerCubelet>(),
         );
         // ... must match the total parity of the center orientations
         let orientations = random_helpers::flips_with_parity(r, 4, pos_parity);

@@ -13,7 +13,8 @@ pub enum TwoParity {
 mod permutations;
 
 /// Shuffles the given array arbitrarily, and returns the parity of the resulting permutation
-pub fn shuffle_any<R: Rng, T: Copy>(rng: &mut R, arr: &[T]) -> (Vec<T>, TwoParity) {
+pub fn shuffle_any<R: Rng, T: Copy>(rng: &mut R, arr: impl IntoIterator<Item=T>) -> (Vec<T>, TwoParity) {
+    let arr: Vec<T> = arr.into_iter().collect();
     let permutation = permutations::any_permutation(rng, arr.len());
 
     let parity = permutation.parity();

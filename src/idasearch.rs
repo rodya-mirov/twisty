@@ -82,6 +82,8 @@ pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Vec<<S a
         let last_move = moves_so_far.get(moves_so_far.len() - 1).copied();
 
         for m in state.available_moves() {
+            // TODO perf: port this logic somehow to the config-depth function?
+            //              except it doesn't have a concept of moves, so not sure
             if last_move.is_some() && S::is_redundant(last_move.unwrap(), m) {
                 continue;
             }

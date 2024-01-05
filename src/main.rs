@@ -89,6 +89,7 @@ enum ScrambleAlg {
     Floppy1x2x2,
     Floppy1x2x3,
     Floppy1x3x3,
+    Cuboid2x2x3,
 }
 
 impl ScrambleAlg {
@@ -97,6 +98,7 @@ impl ScrambleAlg {
             ScrambleAlg::Floppy1x2x2 => "Floppy 1x2x2",
             ScrambleAlg::Floppy1x2x3 => "Floppy 1x2x3",
             ScrambleAlg::Floppy1x3x3 => "Floppy 1x3x3",
+            ScrambleAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
         }
     }
 }
@@ -149,11 +151,17 @@ fn random_scramble(alg: ScrambleAlg) {
         ScrambleAlg::Floppy1x3x3 => Box::new(|| {
             scrambles::random_scramble_string::<_, _, Floppy1x3x3, _>(&mut rng, &no_heuristic)
         }),
+        ScrambleAlg::Cuboid2x2x3 => Box::new(|| {
+            scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &no_heuristic)
+        })
     };
 
     for i in 0..NUM_SCRAMBLES {
+        let start = Instant::now();
         let scramble_str = scrambler();
+        let elapsed = start.elapsed();
         println!("Random scramble {i}: {scramble_str}");
+        println!("    (scramble took {elapsed:?})");
     }
 }
 

@@ -1,7 +1,8 @@
+use enum_iterator::Sequence;
 use rand::Rng;
 
 /// A 3-variant orientation enum which matches corners on many common types of twist puzzles.
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Ord, PartialOrd, Sequence)]
 pub enum CornerOrientation {
     Normal,
     CW,
@@ -40,7 +41,7 @@ impl CornerOrientation {
 }
 
 /// A two-variant orientation enum which behaves like edges in many common types of twist puzzles.
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Sequence)]
 pub enum EdgeOrientation {
     Normal,
     Flipped,
