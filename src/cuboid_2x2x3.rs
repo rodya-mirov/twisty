@@ -3,7 +3,8 @@ use enum_iterator::{all, Sequence};
 use rand::Rng;
 
 use crate::cubesearch::SimpleStartState;
-use crate::idasearch::Solvable;
+use crate::idasearch::heuristic_helpers::bounded_cache;
+use crate::idasearch::{Heuristic, Solvable};
 use crate::moves::{CanReverse, CubeMoveAmt};
 use crate::random_helpers;
 use crate::scrambles::RandomInit;
@@ -217,4 +218,8 @@ impl RandomInit for Cuboid2x2x3 {
             brc: centers[2],
         }
     }
+}
+
+pub fn make_heuristic() -> impl Heuristic<Cuboid2x2x3> {
+    bounded_cache::<Cuboid2x2x3>(8)
 }

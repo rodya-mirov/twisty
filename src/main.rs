@@ -1,4 +1,5 @@
 #![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::assertions_on_constants)]
 
 use std::time::Instant;
 
@@ -149,7 +150,8 @@ fn random_scramble(alg: ScrambleAlg) {
             Box::new(|| scrambles::random_scramble_string::<_, _, Floppy1x3x3, _>(&mut rng, &no_heuristic))
         }
         ScrambleAlg::Cuboid2x2x3 => {
-            Box::new(|| scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &no_heuristic))
+            let heuristic = cuboid_2x2x3::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &heuristic))
         }
     };
 

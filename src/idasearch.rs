@@ -4,6 +4,8 @@
 /// there really needs to not be a solution of size 9, or the algorithm will generate wrong answers)
 /// but it is fine to UNDER estimate. In particular the function |_| 0 is a valid heuristic,
 /// although the performance benefits are minimal.
+pub mod heuristic_helpers;
+
 pub trait Heuristic<T> {
     fn estimated_remaining_cost(&self, t: &T) -> usize;
 }
@@ -79,7 +81,7 @@ pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Vec<<S a
             return SearchResult::Found;
         }
 
-        let last_move = moves_so_far.get(moves_so_far.len() - 1).copied();
+        let last_move = moves_so_far.last().copied();
 
         for m in state.available_moves() {
             // Note -- we don't need this in the config-depth algorithm because that
