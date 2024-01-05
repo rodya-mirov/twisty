@@ -114,10 +114,7 @@ impl CanReverse for Move {
 impl RandomInit for Floppy1x3x3 {
     fn random_state<R: Rng>(r: &mut R) -> Self {
         // the total parity of the position permutation ...
-        let (cubelets, pos_parity) = random_helpers::shuffle_any(
-            r,
-            all::<CornerCubelet>(),
-        );
+        let (cubelets, pos_parity) = random_helpers::shuffle_any(r, all::<CornerCubelet>());
         // ... must match the total parity of the center orientations
         let orientations = random_helpers::flips_with_parity(r, 4, pos_parity);
 

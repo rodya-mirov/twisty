@@ -104,10 +104,7 @@ impl ScrambleAlg {
 }
 
 fn configuration_depth(alg: ConfigAlg) {
-    println!(
-        "Computing configuration depth summary for {}",
-        alg.nice_name()
-    );
+    println!("Computing configuration depth summary for {}", alg.nice_name());
 
     let (elapsed, gn_count) = match alg {
         ConfigAlg::Floppy1x2x2 => enumerate_state_space::<Floppy1x2x2>(),
@@ -134,26 +131,26 @@ fn configuration_depth(alg: ConfigAlg) {
 
 fn random_scramble(alg: ScrambleAlg) {
     const NUM_SCRAMBLES: usize = 5;
-    println!(
-        "Computing {NUM_SCRAMBLES} random scrambles for {}",
-        alg.nice_name()
-    );
+    println!("Computing {NUM_SCRAMBLES} random scrambles for {}", alg.nice_name());
 
-    let mut rng = StdRng::from_entropy();
+    // hard-coded seed for reproducibility
+    let mut rng = StdRng::from_seed([15; 32]);
+    // random seed for actual scrambling
+    // let mut rng = StdRng::from_entropy([);
 
     let mut scrambler: Box<dyn FnMut() -> String> = match alg {
-        ScrambleAlg::Floppy1x2x2 => Box::new(|| {
-            scrambles::random_scramble_string::<_, _, Floppy1x2x2, _>(&mut rng, &no_heuristic)
-        }),
-        ScrambleAlg::Floppy1x2x3 => Box::new(|| {
-            scrambles::random_scramble_string::<_, _, Floppy1x2x3, _>(&mut rng, &no_heuristic)
-        }),
-        ScrambleAlg::Floppy1x3x3 => Box::new(|| {
-            scrambles::random_scramble_string::<_, _, Floppy1x3x3, _>(&mut rng, &no_heuristic)
-        }),
-        ScrambleAlg::Cuboid2x2x3 => Box::new(|| {
-            scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &no_heuristic)
-        })
+        ScrambleAlg::Floppy1x2x2 => {
+            Box::new(|| scrambles::random_scramble_string::<_, _, Floppy1x2x2, _>(&mut rng, &no_heuristic))
+        }
+        ScrambleAlg::Floppy1x2x3 => {
+            Box::new(|| scrambles::random_scramble_string::<_, _, Floppy1x2x3, _>(&mut rng, &no_heuristic))
+        }
+        ScrambleAlg::Floppy1x3x3 => {
+            Box::new(|| scrambles::random_scramble_string::<_, _, Floppy1x3x3, _>(&mut rng, &no_heuristic))
+        }
+        ScrambleAlg::Cuboid2x2x3 => {
+            Box::new(|| scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &no_heuristic))
+        }
     };
 
     for i in 0..NUM_SCRAMBLES {

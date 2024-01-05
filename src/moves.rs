@@ -1,12 +1,13 @@
 //! Traits and reusable data structures for describing moves.
 use derive_more::Display;
+use enum_iterator::Sequence;
 
 pub trait CanReverse: Sized {
     fn reverse(&self) -> Self;
 }
 
 /// Typical moves for a cube twist -- one step, two steps, rev (three steps)
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display, Sequence)]
 pub enum CubeMoveAmt {
     #[display(fmt = "")]
     One,

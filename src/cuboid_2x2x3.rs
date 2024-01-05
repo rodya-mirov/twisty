@@ -47,6 +47,7 @@ pub struct Cuboid2x2x3 {
 }
 
 impl Cuboid2x2x3 {
+    #[inline(always)]
     fn solved() -> Self {
         Self {
             ufl: CornerCubelet::UFL,
@@ -122,7 +123,7 @@ impl SimpleStartState for Cuboid2x2x3 {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Display, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Display, Hash, Sequence)]
 pub enum Move {
     // R and F can only go 2
     R2,
@@ -152,12 +153,13 @@ impl Solvable for Cuboid2x2x3 {
         self == &Self::solved()
     }
 
-    fn available_moves(&self) -> impl IntoIterator<Item=Self::Move> {
-        [Move::R2, Move::F2,
+    fn available_moves(&self) -> impl IntoIterator<Item = Self::Move> {
+        [
+            Move::R2,
+            Move::F2,
             Move::U(CubeMoveAmt::One),
             Move::U(CubeMoveAmt::Two),
             Move::U(CubeMoveAmt::Rev),
-
             Move::D(CubeMoveAmt::One),
             Move::D(CubeMoveAmt::Two),
             Move::D(CubeMoveAmt::Rev),
@@ -181,12 +183,12 @@ impl Solvable for Cuboid2x2x3 {
                 CubeMoveAmt::One => self.u(),
                 CubeMoveAmt::Two => self.u().u(),
                 CubeMoveAmt::Rev => self.u().u().u(),
-            }
+            },
             Move::D(amt) => match amt {
                 CubeMoveAmt::One => self.d(),
                 CubeMoveAmt::Two => self.d().d(),
-                CubeMoveAmt::Rev => self.d().d().d()
-            }
+                CubeMoveAmt::Rev => self.d().d().d(),
+            },
         }
     }
 

@@ -8,12 +8,7 @@ pub trait RandomInit: Sized {
     fn random_state<R: Rng>(r: &mut R) -> Self;
 }
 
-pub fn random_scramble<
-    R: Rng,
-    M: CanReverse,
-    State: RandomInit + Solvable<Move = M>,
-    H: Heuristic<State>,
->(
+pub fn random_scramble<R: Rng, M: CanReverse, State: RandomInit + Solvable<Move = M>, H: Heuristic<State>>(
     rng: &mut R,
     h: &H,
 ) -> Vec<M> {
