@@ -63,8 +63,14 @@ impl Floppy1x2x3 {
 }
 
 impl SimpleStartState for Floppy1x2x3 {
+    type UniqueKey = Self;
+
     fn start() -> Self {
         Self::solved()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        *self
     }
 }
 
