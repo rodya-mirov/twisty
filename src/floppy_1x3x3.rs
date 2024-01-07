@@ -2,7 +2,7 @@ use derive_more::Display;
 use enum_iterator::{all, Sequence};
 use rand::Rng;
 
-use crate::cubesearch::SimpleState;
+use crate::cubesearch::State;
 use crate::idasearch::Solvable;
 use crate::moves::CanReverse;
 use crate::orientations::EdgeOrientation;
@@ -80,7 +80,9 @@ impl Floppy1x3x3 {
     }
 }
 
-impl SimpleState for Floppy1x3x3 {
+impl State for Floppy1x3x3 {
+    type UniqueKey = Self;
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
@@ -93,6 +95,10 @@ impl SimpleState for Floppy1x3x3 {
 
     fn start() -> Self {
         Self::solved()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        *self
     }
 }
 

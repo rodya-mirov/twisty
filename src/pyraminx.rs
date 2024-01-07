@@ -1,6 +1,6 @@
 use ahash::HashMap;
 
-use crate::cubesearch::SimpleState;
+use crate::cubesearch::State;
 use crate::orientations::{CornerOrientation, EdgeOrientation};
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -244,7 +244,9 @@ impl PyraminxState for Pyraminx {
     }
 }
 
-impl SimpleState for Pyraminx {
+impl State for Pyraminx {
+    type UniqueKey = Self;
+
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
         Recv: FnMut(Self),
@@ -268,6 +270,10 @@ impl SimpleState for Pyraminx {
 
     fn start() -> Self {
         <Self as PyraminxState>::start()
+    }
+
+    fn uniq_key(&self) -> Self::UniqueKey {
+        *self
     }
 }
 
