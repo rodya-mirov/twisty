@@ -11,6 +11,7 @@ use crate::coin_pyraminx::CoinPyraminx;
 use crate::cubesearch::enumerate_state_space;
 use crate::cubesearch::nice_print;
 use crate::cuboid_2x2x3::Cuboid2x2x3;
+use crate::cuboid_2x3x3::Cuboid2x3x3;
 use crate::floppy_1x2x2::Floppy1x2x2;
 use crate::floppy_1x2x3::Floppy1x2x3;
 use crate::floppy_1x3x3::Floppy1x3x3;
@@ -32,6 +33,7 @@ mod idasearch;
 // actual puzzles
 mod coin_pyraminx;
 mod cuboid_2x2x3;
+mod cuboid_2x3x3;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
@@ -91,6 +93,7 @@ enum ScrambleAlg {
     Floppy1x2x3,
     Floppy1x3x3,
     Cuboid2x2x3,
+    Cuboid2x3x3,
 }
 
 impl ScrambleAlg {
@@ -100,6 +103,7 @@ impl ScrambleAlg {
             ScrambleAlg::Floppy1x2x3 => "Floppy 1x2x3",
             ScrambleAlg::Floppy1x3x3 => "Floppy 1x3x3",
             ScrambleAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
+            ScrambleAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
         }
     }
 }
@@ -135,9 +139,9 @@ fn random_scramble(alg: ScrambleAlg) {
     println!("Computing {NUM_SCRAMBLES} random scrambles for {}", alg.nice_name());
 
     // hard-coded seed for reproducibility
-    let mut rng = StdRng::from_seed([15; 32]);
+    // let mut rng = StdRng::from_seed([15; 32]);
     // random seed for actual scrambling
-    // let mut rng = StdRng::from_entropy([);
+    let mut rng = StdRng::from_entropy();
 
     let mut scrambler: Box<dyn FnMut() -> String> = match alg {
         ScrambleAlg::Floppy1x2x2 => {
@@ -152,6 +156,10 @@ fn random_scramble(alg: ScrambleAlg) {
         ScrambleAlg::Cuboid2x2x3 => {
             let heuristic = cuboid_2x2x3::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &heuristic))
+        }
+        ScrambleAlg::Cuboid2x3x3 => {
+            let heuristic = cuboid_2x3x3::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic))
         }
     };
 
