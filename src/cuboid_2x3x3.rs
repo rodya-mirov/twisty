@@ -10,6 +10,7 @@ use crate::random_helpers;
 use crate::scrambles::RandomInit;
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Sequence)]
+#[repr(u8)]
 enum CornerCubelet {
     // DBL is fixed; everything else can move
     UFL,
@@ -21,7 +22,14 @@ enum CornerCubelet {
     DBR,
 }
 
+impl CornerCubelet {
+    fn pack(self, source: &mut u64) {
+        *source = (*source << 3) + (self as u64);
+    }
+}
+
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Sequence)]
+#[repr(u8)]
 enum EdgeCubelet {
     UF,
     UL,
@@ -33,10 +41,23 @@ enum EdgeCubelet {
     DR,
 }
 
+impl EdgeCubelet {
+    fn pack(self, source: &mut u64) {
+        *source = (*source << 3) + (self as u64);
+    }
+}
+
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug, Sequence)]
+#[repr(u8)]
 enum CenterCubelet {
     U,
     D,
+}
+
+impl CenterCubelet {
+    fn pack(self, source: &mut u64) {
+        *source = (*source << 1) + (self as u64);
+    }
 }
 
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
@@ -194,14 +215,41 @@ impl Cuboid2x3x3 {
 }
 
 impl SimpleStartState for Cuboid2x3x3 {
-    type UniqueKey = Self;
+    type UniqueKey = u64;
 
     fn start() -> Self {
         Self::solved()
     }
 
     fn uniq_key(&self) -> Self::UniqueKey {
-        *self
+        let mut out: u64 = 0;
+
+        // first, pack the edges; we can get away with only packing 7 of them
+        self.uf.pack(&mut out);
+        self.ur.pack(&mut out);
+        self.ub.pack(&mut out);
+        self.ul.pack(&mut out);
+
+        self.df.pack(&mut out);
+        self.dl.pack(&mut out);
+        self.db.pack(&mut out);
+        // dr is determined by the others
+
+        // next, pack the corners; we can pack only 6 of them
+        self.ufl.pack(&mut out);
+        self.ufr.pack(&mut out);
+        self.ubl.pack(&mut out);
+        self.ubr.pack(&mut out);
+
+        self.dfl.pack(&mut out);
+        self.dfr.pack(&mut out);
+        // dbl is fixed by the moves, and dbr is determined by the rest
+
+        // finally, pack the center
+        self.uc.pack(&mut out);
+        // dc is determined by uc
+
+        out
     }
 }
 
@@ -308,4 +356,30 @@ impl RandomInit for Cuboid2x3x3 {
 
 pub fn make_heuristic() -> impl Heuristic<Cuboid2x3x3> {
     bounded_cache::<Cuboid2x3x3>(8)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensure_corner_cubelets_fit_in_space() {
+        for c in all::<CornerCubelet>() {
+            assert!((c as u8) < 8);
+        }
+    }
+
+    #[test]
+    fn ensure_edge_cubelets_fit_in_space() {
+        for c in all::<EdgeCubelet>() {
+            assert!((c as u8) < 8);
+        }
+    }
+
+    #[test]
+    fn ensure_center_cubelets_fit_in_space() {
+        for c in all::<CenterCubelet>() {
+            assert!((c as u8) < 2);
+        }
+    }
 }

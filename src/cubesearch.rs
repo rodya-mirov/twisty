@@ -80,11 +80,12 @@ pub trait SimpleStartState: Sized {
     fn uniq_key(&self) -> Self::UniqueKey;
 }
 
-impl<T> State for T
+impl<K, T> State for T
 where
-    T: SimpleStartState + Solvable + Sized + Hash + Eq + PartialEq + Clone + 'static,
+    T: SimpleStartState<UniqueKey = K> + Solvable + Sized,
+    K: Hash + Eq + PartialEq + Clone + 'static,
 {
-    type UniqueKey = T;
+    type UniqueKey = K;
 
     fn neighbors<Recv>(&self, to_add: &mut Recv)
     where
@@ -102,7 +103,7 @@ where
     }
 
     fn uniq_key(&self) -> Self::UniqueKey {
-        self.clone()
+        SimpleStartState::uniq_key(self)
     }
 }
 
@@ -148,7 +149,11 @@ where
         next_distance += 1;
 
         // TODO: find a nice way to enable/disable this with the CLI, without adding a ton of typing
-        println!("Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}", counts.values().sum::<u128>(), start_time.elapsed());
+        println!(
+            "Many distance! Up to {next_distance} without stopping; up to {} unique states so far. Elapsed: {:?}",
+            counts.values().sum::<u128>(),
+            start_time.elapsed()
+        );
 
         to_process.clear();
         std::mem::swap(&mut to_process, &mut next_stage);
