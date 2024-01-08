@@ -107,9 +107,9 @@ where
     }
 }
 
-pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
+pub fn enumerate_state_space_started<T>(starts: Vec<T>) -> (Duration, HashMap<u128, u128>)
 where
-    T: State + Hash + Eq + Clone,
+    T: State + Hash + Eq,
 {
     let start_time = Instant::now();
 
@@ -118,10 +118,8 @@ where
     let mut all_seen: HashSet<_> = Default::default();
 
     let mut next_distance = 0;
-    let mut to_process: Vec<T> = Vec::default();
+    let mut to_process: Vec<T> = starts;
     let mut next_stage: Vec<T> = Vec::default();
-
-    to_process.push(T::start());
 
     loop {
         let mut this_stage_new_configs = 0;
@@ -162,4 +160,11 @@ where
     let elapsed = start_time.elapsed();
 
     (elapsed, counts)
+}
+
+pub fn enumerate_state_space<T>() -> (Duration, HashMap<u128, u128>)
+where
+    T: State + Hash + Eq,
+{
+    enumerate_state_space_started(vec![T::start()])
 }

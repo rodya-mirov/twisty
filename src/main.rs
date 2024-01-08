@@ -8,10 +8,11 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 
 use crate::coin_pyraminx::CoinPyraminx;
-use crate::cubesearch::enumerate_state_space;
 use crate::cubesearch::nice_print;
+use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
 use crate::cuboid_2x2x3::Cuboid2x2x3;
 use crate::cuboid_2x3x3::Cuboid2x3x3;
+use crate::dino_cube::DinoCube;
 use crate::floppy_1x2x2::Floppy1x2x2;
 use crate::floppy_1x2x3::Floppy1x2x3;
 use crate::floppy_1x3x3::Floppy1x3x3;
@@ -34,6 +35,7 @@ mod idasearch;
 mod coin_pyraminx;
 mod cuboid_2x2x3;
 mod cuboid_2x3x3;
+mod dino_cube;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
@@ -63,6 +65,8 @@ enum ConfigAlg {
     Floppy1x3x3,
     Cuboid2x2x3,
     Cuboid2x3x3,
+    DinoCubeOneSolution,
+    DinoCubeEitherSolution,
     Skewb,
     MirrorPocketCube,
     PocketCube,
@@ -79,6 +83,8 @@ impl ConfigAlg {
             ConfigAlg::Floppy1x3x3 => "Floppy 1x3x3",
             ConfigAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
             ConfigAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
+            ConfigAlg::DinoCubeOneSolution => "Dino Cube (To One Solution)",
+            ConfigAlg::DinoCubeEitherSolution => "Dino Cube (To Either Solution)",
             ConfigAlg::Skewb => "Skewb",
             ConfigAlg::MirrorPocketCube => "Mirror Pocket Cube",
             ConfigAlg::PocketCube => "Pocket Cube",
@@ -96,6 +102,7 @@ enum ScrambleAlg {
     Floppy1x3x3,
     Cuboid2x2x3,
     Cuboid2x3x3,
+    DinoCube,
 }
 
 impl ScrambleAlg {
@@ -106,6 +113,7 @@ impl ScrambleAlg {
             ScrambleAlg::Floppy1x3x3 => "Floppy 1x3x3",
             ScrambleAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
             ScrambleAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
+            ScrambleAlg::DinoCube => "Dino Cube",
         }
     }
 }
@@ -119,6 +127,10 @@ fn configuration_depth(alg: ConfigAlg) {
         ConfigAlg::Floppy1x3x3 => enumerate_state_space::<Floppy1x3x3>(),
         ConfigAlg::Cuboid2x2x3 => enumerate_state_space::<Cuboid2x2x3>(),
         ConfigAlg::Cuboid2x3x3 => enumerate_state_space::<Cuboid2x3x3>(),
+        ConfigAlg::DinoCubeOneSolution => enumerate_state_space::<DinoCube>(),
+        ConfigAlg::DinoCubeEitherSolution => {
+            enumerate_state_space_started::<DinoCube>(vec![DinoCube::solved_state(), DinoCube::solved_mirrored()])
+        }
         ConfigAlg::Skewb => enumerate_state_space::<skewb::Skewb>(),
         ConfigAlg::MirrorPocketCube => enumerate_state_space::<MirrorPocketCube>(),
         ConfigAlg::PocketCube => enumerate_state_space::<PocketCube>(),
@@ -163,6 +175,10 @@ fn random_scramble(alg: ScrambleAlg) {
         ScrambleAlg::Cuboid2x3x3 => {
             let heuristic = cuboid_2x3x3::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic))
+        }
+        ScrambleAlg::DinoCube => {
+            let heuristic = dino_cube::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, DinoCube, _>(&mut rng, &heuristic))
         }
     };
 
