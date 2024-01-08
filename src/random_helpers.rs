@@ -24,7 +24,6 @@ pub fn shuffle_any<R: Rng, T: Copy>(rng: &mut R, arr: impl IntoIterator<Item = T
     (shuffled, parity)
 }
 
-#[allow(unused)]
 pub fn shuffle_with_parity<R: Rng, T: Copy>(rng: &mut R, arr: &[T], desired: TwoParity) -> Vec<T> {
     let permutation = permutations::with_parity(rng, arr.len(), desired);
 
