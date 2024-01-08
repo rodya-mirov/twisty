@@ -40,7 +40,6 @@ impl EdgeCubelet {
     }
 }
 
-
 #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
 pub struct DinoCube {
     // u layer
@@ -144,9 +143,9 @@ impl DinoCube {
     #[inline(always)]
     fn dbl(&self) -> Self {
         Self {
-            bl: self.dl,
-            dl: self.db,
-            db: self.bl,
+            bl: self.db,
+            db: self.dl,
+            dl: self.bl,
             ..*self
         }
     }
@@ -165,18 +164,18 @@ impl DinoCube {
     fn dblw(&self) -> Self {
         Self {
             // everything from dbl
-            bl: self.dl,
-            dl: self.db,
-            db: self.bl,
+            bl: self.db,
+            db: self.dl,
+            dl: self.bl,
             // then another layer, which is a lot of stuff unfortunately; two 3-cycles
             // cycle one
-            fl: self.dr,
-            dr: self.ub,
-            ub: self.fl,
+            fl: self.ub,
+            ub: self.dr,
+            dr: self.fl,
             // cycle two
-            ul: self.df,
-            df: self.br,
-            br: self.ul,
+            ul: self.br,
+            br: self.df,
+            df: self.ul,
             // rest is same
             ..*self
         }
