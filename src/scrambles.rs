@@ -1,5 +1,5 @@
 use crate::idasearch;
-use crate::idasearch::{Heuristic, Solvable};
+use crate::idasearch::{Heuristic, Solvable, SolveError};
 use crate::moves::CanReverse;
 use rand::Rng;
 use std::fmt::Display;
@@ -11,14 +11,15 @@ pub trait RandomInit: Sized {
 pub fn random_scramble<R: Rng, M: CanReverse, State: RandomInit + Solvable<Move = M>, H: Heuristic<State>>(
     rng: &mut R,
     h: &H,
-) -> Vec<M> {
+) -> Result<Vec<M>, SolveError> {
     let s = State::random_state(rng);
 
     // solve the scramble
-    let solution: Vec<M> = idasearch::solve(&s, h);
+    let solution: Vec<M> = idasearch::solve(&s, h)?;
 
     // reverse the order and the moves themselves
-    solution.into_iter().rev().map(|m| m.reverse()).collect()
+    let out = solution.into_iter().rev().map(|m| m.reverse()).collect();
+    Ok(out)
 }
 
 pub fn random_scramble_string<
@@ -29,12 +30,14 @@ pub fn random_scramble_string<
 >(
     rng: &mut R,
     h: &H,
-) -> String {
-    let moves = random_scramble(rng, h);
+) -> Result<String, SolveError> {
+    let moves = random_scramble(rng, h)?;
 
-    moves
+    let out = moves
         .into_iter()
         .map(|m| format!("{m}"))
         .reduce(|a, b| format!("{a} {b}"))
-        .unwrap_or_else(|| "".to_string())
+        .unwrap_or_else(|| "".to_string());
+
+    Ok(out)
 }

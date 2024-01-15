@@ -12,11 +12,12 @@ use crate::cubesearch::nice_print;
 use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
 use crate::cuboid_2x2x3::Cuboid2x2x3;
 use crate::cuboid_2x3x3::Cuboid2x3x3;
+use crate::cuboid_3x3x4::Cuboid3x3x4;
 use crate::dino_cube::DinoCube;
 use crate::floppy_1x2x2::Floppy1x2x2;
 use crate::floppy_1x2x3::Floppy1x2x3;
 use crate::floppy_1x3x3::Floppy1x3x3;
-use crate::idasearch::no_heuristic;
+use crate::idasearch::{no_heuristic, SolveError};
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
@@ -35,6 +36,7 @@ mod idasearch;
 mod coin_pyraminx;
 mod cuboid_2x2x3;
 mod cuboid_2x3x3;
+mod cuboid_3x3x4;
 mod dino_cube;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
@@ -102,6 +104,7 @@ enum ScrambleAlg {
     Floppy1x3x3,
     Cuboid2x2x3,
     Cuboid2x3x3,
+    Cuboid3x3x4,
     DinoCube,
 }
 
@@ -113,6 +116,7 @@ impl ScrambleAlg {
             ScrambleAlg::Floppy1x3x3 => "Floppy 1x3x3",
             ScrambleAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
             ScrambleAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
+            ScrambleAlg::Cuboid3x3x4 => "Cuboid 3x3x4",
             ScrambleAlg::DinoCube => "Dino Cube",
         }
     }
@@ -150,7 +154,7 @@ fn configuration_depth(alg: ConfigAlg) {
 }
 
 fn random_scramble(alg: ScrambleAlg) {
-    const NUM_SCRAMBLES: usize = 5;
+    const NUM_SCRAMBLES: usize = 10;
     println!("Computing {NUM_SCRAMBLES} random scrambles for {}", alg.nice_name());
 
     // hard-coded seed for reproducibility
@@ -158,7 +162,9 @@ fn random_scramble(alg: ScrambleAlg) {
     // random seed for actual scrambling
     let mut rng = StdRng::from_entropy();
 
-    let mut scrambler: Box<dyn FnMut() -> String> = match alg {
+    let setup_time = Instant::now();
+
+    let mut scrambler: Box<dyn FnMut() -> Result<String, SolveError>> = match alg {
         ScrambleAlg::Floppy1x2x2 => {
             Box::new(|| scrambles::random_scramble_string::<_, _, Floppy1x2x2, _>(&mut rng, &no_heuristic))
         }
@@ -176,18 +182,35 @@ fn random_scramble(alg: ScrambleAlg) {
             let heuristic = cuboid_2x3x3::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic))
         }
+        ScrambleAlg::Cuboid3x3x4 => {
+            let heuristic = cuboid_3x3x4::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid3x3x4, _>(&mut rng, &heuristic))
+        }
         ScrambleAlg::DinoCube => {
             let heuristic = dino_cube::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, DinoCube, _>(&mut rng, &heuristic))
         }
     };
 
+    let elapsed = setup_time.elapsed();
+    println!("Setting up heuristics took {elapsed:?}");
+
     for i in 0..NUM_SCRAMBLES {
         let start = Instant::now();
-        let scramble_str = scrambler();
+        let scramble_result = scrambler();
         let elapsed = start.elapsed();
-        println!("Random scramble {i}: {scramble_str}");
-        println!("    (scramble took {elapsed:?})");
+
+        match scramble_result {
+            Ok(scramble_str) => {
+                let len = scramble_str.split_ascii_whitespace().count();
+                println!("Random scramble {i}: {scramble_str}");
+                println!("    (scramble of length {len} took {elapsed:?})");
+            }
+            Err(SolveError::OutOfGas { max_fuel }) => {
+                println!("Could not find a solution to random state");
+                println!("    (out of gas with max fuel of length {max_fuel} took {elapsed:?})");
+            }
+        }
     }
 }
 

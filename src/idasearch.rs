@@ -1,5 +1,7 @@
 //! Helper functionality for IDA* search.
 
+use crate::idasearch::SolveError::OutOfGas;
+
 /// Estimator of the remaining cost. This must never OVER estimate (that is, if it says 10,
 /// there really needs to not be a solution of size 9, or the algorithm will generate wrong answers)
 /// but it is fine to UNDER estimate. In particular the function |_| 0 is a valid heuristic,
@@ -62,7 +64,11 @@ pub trait Solvable: Sized + Clone {
     fn max_fuel() -> usize;
 }
 
-pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Vec<<S as Solvable>::Move> {
+pub enum SolveError {
+    OutOfGas { max_fuel: usize },
+}
+
+pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Result<Vec<<S as Solvable>::Move>, SolveError> {
     let max_fuel = S::max_fuel();
 
     #[derive(Eq, PartialEq, Copy, Clone, Debug)]
@@ -117,9 +123,9 @@ pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Vec<<S a
         let sr = dfs(state, heuristic, &mut solution, fuel);
 
         if sr == SearchResult::Found {
-            return solution;
+            return Ok(solution);
         }
     }
 
-    panic!("Could not find a solution with fuel {max_fuel}");
+    Err(OutOfGas { max_fuel })
 }

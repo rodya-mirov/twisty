@@ -5,35 +5,35 @@ use ahash::{HashMap, HashSet};
 use crate::cubesearch::State;
 use crate::idasearch::Heuristic;
 
-pub struct BoundedStateCache<S: Hash + Eq + PartialEq> {
-    stored: HashMap<S, usize>,
+pub struct BoundedStateCache<H: Hash + Eq> {
+    stored: HashMap<H, usize>,
     // if not found, return this value
     fallback_depth: usize,
 }
 
-impl<S: Hash + Eq> Heuristic<S> for BoundedStateCache<S> {
+impl<H: Hash + Eq, S: State<UniqueKey = H>> Heuristic<S> for BoundedStateCache<H> {
     fn estimated_remaining_cost(&self, t: &S) -> usize {
-        self.stored.get(t).copied().unwrap_or(self.fallback_depth)
+        self.stored.get(&t.uniq_key()).copied().unwrap_or(self.fallback_depth)
     }
 }
 
-pub fn bounded_cache<S: Hash + Eq + Clone + State>(max_depth: usize) -> BoundedStateCache<S> {
-    let mut out: HashMap<S, usize> = HashMap::default();
+pub fn bounded_cache<S: Clone + State>(max_depth: usize) -> BoundedStateCache<<S as State>::UniqueKey> {
+    let mut out: HashMap<<S as State>::UniqueKey, usize> = HashMap::default();
 
     // essentially just do a BFS until we hit the max depth
     let mut to_process: Vec<S> = vec![];
     let mut next_state: Vec<S> = vec![];
-    let mut seen: HashSet<S> = HashSet::default();
+    let mut seen: HashSet<<S as State>::UniqueKey> = HashSet::default();
 
     to_process.push(S::start());
 
     for depth in 0..=max_depth {
         for s in to_process.drain(..) {
-            if !seen.insert(s.clone()) {
+            if !seen.insert(s.uniq_key()) {
                 continue;
             }
 
-            out.insert(s.clone(), depth);
+            out.insert(s.uniq_key(), depth);
 
             let mut recv = |neighbor| {
                 next_state.push(neighbor);
@@ -42,8 +42,14 @@ pub fn bounded_cache<S: Hash + Eq + Clone + State>(max_depth: usize) -> BoundedS
             s.neighbors(&mut recv);
         }
 
+        assert!(to_process.is_empty());
         to_process.clear();
         std::mem::swap(&mut to_process, &mut next_state);
+
+        if to_process.is_empty() {
+            println!("Exited heuristic creation early; all solutions found in {depth} steps");
+            break;
+        }
     }
 
     BoundedStateCache {
