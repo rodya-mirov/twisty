@@ -105,6 +105,10 @@ where
     fn uniq_key(&self) -> Self::UniqueKey {
         SimpleStartState::uniq_key(self)
     }
+
+    fn should_count_as_config(&self) -> bool {
+        SimpleStartState::should_count_as_config(self)
+    }
 }
 
 pub fn enumerate_state_space_started<T>(starts: Vec<T>) -> (Duration, HashMap<u128, u128>)

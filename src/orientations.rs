@@ -9,6 +9,12 @@ pub enum CornerOrientation {
     CCW,
 }
 
+impl Default for CornerOrientation {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 impl CornerOrientation {
     /// A simple cast to u8 for encoding. Guaranteed to have minimal size, that is,
     /// using at most two bits.
@@ -47,6 +53,12 @@ pub enum EdgeOrientation {
     Flipped,
 }
 
+impl Default for EdgeOrientation {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 impl EdgeOrientation {
     #[inline(always)]
     pub fn flipped(&self) -> Self {
@@ -61,6 +73,15 @@ impl EdgeOrientation {
             Self::Normal
         } else {
             Self::Flipped
+        }
+    }
+    /// A simple cast to u8 for encoding. Guaranteed to have minimal size, that is,
+    /// using at most one bits.
+    #[inline(always)]
+    pub fn as_u8_one_bit(self) -> u8 {
+        match self {
+            EdgeOrientation::Normal => 0,
+            EdgeOrientation::Flipped => 1,
         }
     }
 }

@@ -3,6 +3,7 @@
 
 use std::time::Instant;
 
+use crate::bandaged_3x3x3_1x2x3::Bandaged3x3x3with1x2x3;
 use clap::{Parser, Subcommand};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -32,6 +33,7 @@ mod cubesearch;
 mod idasearch;
 
 // actual puzzles
+mod bandaged_3x3x3_1x2x3;
 mod coin_pyraminx;
 mod cuboid_2x2x3;
 mod cuboid_2x3x3;
@@ -103,6 +105,7 @@ enum ScrambleAlg {
     Cuboid2x2x3,
     Cuboid2x3x3,
     DinoCube,
+    Bandaged3x3x3With1x2x3,
 }
 
 impl ScrambleAlg {
@@ -114,6 +117,7 @@ impl ScrambleAlg {
             ScrambleAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
             ScrambleAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
             ScrambleAlg::DinoCube => "Dino Cube",
+            ScrambleAlg::Bandaged3x3x3With1x2x3 => "Bandaged 3x3x3 with 1x2x3",
         }
     }
 }
@@ -181,6 +185,10 @@ fn random_scramble(alg: ScrambleAlg) {
         ScrambleAlg::DinoCube => {
             let heuristic = dino_cube::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, DinoCube, _>(&mut rng, &heuristic))
+        }
+        ScrambleAlg::Bandaged3x3x3With1x2x3 => {
+            let heuristic = bandaged_3x3x3_1x2x3::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic))
         }
     };
 
