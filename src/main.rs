@@ -17,6 +17,7 @@ use crate::dino_cube::DinoCube;
 use crate::floppy_1x2x2::Floppy1x2x2;
 use crate::floppy_1x2x3::Floppy1x2x3;
 use crate::floppy_1x3x3::Floppy1x3x3;
+use crate::floppy_1xnxn::Floppy1xMxN;
 use crate::idasearch::{no_heuristic, SolveError};
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
@@ -41,6 +42,7 @@ mod dino_cube;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
+mod floppy_1xnxn;
 mod mirror_pocket_cube;
 mod pocket_cube;
 mod pyraminx;
@@ -65,6 +67,16 @@ enum ConfigAlg {
     Floppy1x2x2,
     Floppy1x2x3,
     Floppy1x3x3,
+    BigFloppy1x3x3,
+    BigFloppy1x3x4,
+    BigFloppy1x3x5,
+    BigFloppy1x3x6,
+    BigFloppy1x4x4,
+    BigFloppy1x4x5,
+    BigFloppy1x4x6,
+    BigFloppy1x5x5,
+    BigFloppy1x5x6,
+    BigFloppy1x6x6,
     Cuboid2x2x3,
     Cuboid2x3x3,
     DinoCubeOneSolution,
@@ -83,6 +95,16 @@ impl ConfigAlg {
             ConfigAlg::Floppy1x2x2 => "Floppy 1x2x2",
             ConfigAlg::Floppy1x2x3 => "Floppy 1x2x3",
             ConfigAlg::Floppy1x3x3 => "Floppy 1x3x3",
+            ConfigAlg::BigFloppy1x3x3 => "Big Floppy 1x3x3",
+            ConfigAlg::BigFloppy1x3x4 => "Big Floppy 1x3x4",
+            ConfigAlg::BigFloppy1x3x5 => "Big Floppy 1x3x5",
+            ConfigAlg::BigFloppy1x3x6 => "Big Floppy 1x3x6",
+            ConfigAlg::BigFloppy1x4x4 => "Big Floppy 1x4x4",
+            ConfigAlg::BigFloppy1x4x5 => "Big Floppy 1x4x5",
+            ConfigAlg::BigFloppy1x4x6 => "Big Floppy 1x4x6",
+            ConfigAlg::BigFloppy1x5x5 => "Big Floppy 1x5x5",
+            ConfigAlg::BigFloppy1x5x6 => "Big Floppy 1x5x6",
+            ConfigAlg::BigFloppy1x6x6 => "Big Floppy 1x6x6",
             ConfigAlg::Cuboid2x2x3 => "Cuboid 2x2x3",
             ConfigAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
             ConfigAlg::DinoCubeOneSolution => "Dino Cube (To One Solution)",
@@ -129,6 +151,16 @@ fn configuration_depth(alg: ConfigAlg) {
         ConfigAlg::Floppy1x2x2 => enumerate_state_space::<Floppy1x2x2>(),
         ConfigAlg::Floppy1x2x3 => enumerate_state_space::<Floppy1x2x3>(),
         ConfigAlg::Floppy1x3x3 => enumerate_state_space::<Floppy1x3x3>(),
+        ConfigAlg::BigFloppy1x3x3 => enumerate_state_space::<Floppy1xMxN<1, 1>>(),
+        ConfigAlg::BigFloppy1x3x4 => enumerate_state_space::<Floppy1xMxN<1, 2>>(),
+        ConfigAlg::BigFloppy1x3x5 => enumerate_state_space::<Floppy1xMxN<1, 3>>(),
+        ConfigAlg::BigFloppy1x3x6 => enumerate_state_space::<Floppy1xMxN<1, 4>>(),
+        ConfigAlg::BigFloppy1x4x4 => enumerate_state_space::<Floppy1xMxN<2, 2>>(),
+        ConfigAlg::BigFloppy1x4x5 => enumerate_state_space::<Floppy1xMxN<2, 3>>(),
+        ConfigAlg::BigFloppy1x4x6 => enumerate_state_space::<Floppy1xMxN<2, 4>>(),
+        ConfigAlg::BigFloppy1x5x5 => enumerate_state_space::<Floppy1xMxN<3, 3>>(),
+        ConfigAlg::BigFloppy1x5x6 => enumerate_state_space::<Floppy1xMxN<3, 4>>(),
+        ConfigAlg::BigFloppy1x6x6 => enumerate_state_space::<Floppy1xMxN<4, 4>>(),
         ConfigAlg::Cuboid2x2x3 => enumerate_state_space::<Cuboid2x2x3>(),
         ConfigAlg::Cuboid2x3x3 => enumerate_state_space::<Cuboid2x3x3>(),
         ConfigAlg::DinoCubeOneSolution => enumerate_state_space::<DinoCube>(),
