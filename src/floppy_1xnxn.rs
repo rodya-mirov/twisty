@@ -190,20 +190,7 @@ impl <const H: usize, const W: usize>SimpleStartState for Floppy1xMxN<H, W> {
 
 impl <const H: usize, const W: usize> RandomInit for Floppy1xMxN<H, W> {
     fn random_state<R: Rng>(r: &mut R) -> Self {
-        Self {
-            ul: CornerCubelet::UL,
-            ur: CornerCubelet::UR,
-            dr: CornerCubelet::DR,
-            centers: [[true; W]; H],
-            left_edge_pos: [true; H],
-            left_edge_orr: [true; H],
-            right_edge_pos: [true; H],
-            right_edge_orr: [true; H],
-            top_edge_pos: [true; W],
-            top_edge_orr: [true; W],
-            bot_edge_pos: [true; W],
-            bot_edge_orr: [true; W],
-        }
+        todo!("I actually know how to do this now, so we could do it")
     }
 }
 
