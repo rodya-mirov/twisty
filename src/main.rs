@@ -22,6 +22,7 @@ use crate::idasearch::{no_heuristic, SolveError};
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
+use crate::square_one_shape::SquareOneShape;
 
 // reusable state modules
 mod moves;
@@ -47,6 +48,7 @@ mod mirror_pocket_cube;
 mod pocket_cube;
 mod pyraminx;
 mod skewb;
+mod square_one_shape;
 
 #[derive(Parser)]
 struct Cli {
@@ -87,6 +89,7 @@ enum ConfigAlg {
     PyraminxNoTips,
     PyraminxWithTips,
     CoinPyraminx,
+    SquareOneShape,
 }
 
 impl ConfigAlg {
@@ -115,6 +118,7 @@ impl ConfigAlg {
             ConfigAlg::PyraminxNoTips => "Pyraminx (No Tips)",
             ConfigAlg::PyraminxWithTips => "Pyraminx (With Tips)",
             ConfigAlg::CoinPyraminx => "Coin Pyraminx",
+            ConfigAlg::SquareOneShape => "Square One Shape",
         }
     }
 }
@@ -178,6 +182,7 @@ fn configuration_depth(alg: ConfigAlg) {
             (start.elapsed(), gn_count)
         }
         ConfigAlg::CoinPyraminx => enumerate_state_space::<CoinPyraminx>(),
+        ConfigAlg::SquareOneShape => enumerate_state_space::<SquareOneShape>(),
     };
 
     println!("Processing took {elapsed:?}");

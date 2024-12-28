@@ -1,4 +1,3 @@
-
 use super::*;
 
 // 1 center row, 2 center columns
@@ -7,7 +6,7 @@ const FLOPPY_134: Floppy1xMxN<1, 2> = Floppy1xMxN::<1, 2> {
     ur: CornerCubelet::UR,
     dr: CornerCubelet::DR,
 
-    centers: [[true,true]],
+    centers: [[true, true]],
 
     left_edge_pos: [true],
     left_edge_orr: [true],

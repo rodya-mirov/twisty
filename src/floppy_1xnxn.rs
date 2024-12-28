@@ -1,6 +1,6 @@
-use std::mem::swap;
 use derive_more::Display;
 use rand::Rng;
+use std::mem::swap;
 
 use crate::cubesearch::SimpleStartState;
 use crate::idasearch::Solvable;
@@ -50,7 +50,7 @@ pub struct Floppy1xMxN<const H: usize, const W: usize> {
     bot_edge_orr: [bool; W],
 }
 
-impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
+impl<const H: usize, const W: usize> Floppy1xMxN<H, W> {
     fn solved() -> Self {
         Self {
             ul: CornerCubelet::UL,
@@ -86,18 +86,18 @@ impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
 
         // top edges -- note they have position (which is swapped) and orientation (which is
         // swapped and flipped)
-        for x in 0 .. (W/2) {
-            let x_opp = W - 1  - x;
+        for x in 0..(W / 2) {
+            let x_opp = W - 1 - x;
 
             out.top_edge_pos.swap(x, x_opp);
             out.top_edge_orr.swap(x, x_opp);
         }
 
-        for x in 0 .. W {
+        for x in 0..W {
             out.top_edge_orr[x] = !out.top_edge_orr[x];
         }
 
-        for y in 0 .. num_center_rows {
+        for y in 0..num_center_rows {
             // left/right edge swaps
             swap(&mut out.left_edge_orr[y], &mut out.right_edge_orr[y]);
             swap(&mut out.left_edge_pos[y], &mut out.right_edge_pos[y]);
@@ -109,12 +109,12 @@ impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
             out.right_edge_orr[y] = !out.right_edge_orr[y];
 
             // and center swaps
-            for x in 0 .. (W/2) {
-                let x_opp = W-1- x;
+            for x in 0..(W / 2) {
+                let x_opp = W - 1 - x;
                 out.centers[y].swap(x, x_opp);
             }
 
-            for x in 0 .. W {
+            for x in 0..W {
                 out.centers[y][x] = !out.centers[y][x];
             }
         }
@@ -135,19 +135,19 @@ impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
 
         // right edges -- note they have position (which is swapped) and orientation (which is
         // swapped and flipped)
-        for y in 0 .. (H/2) {
-            let y_opp = H -1- y;
+        for y in 0..(H / 2) {
+            let y_opp = H - 1 - y;
 
             out.right_edge_orr.swap(y, y_opp);
             out.right_edge_pos.swap(y, y_opp);
         }
 
-        for y in 0 .. H {
+        for y in 0..H {
             out.right_edge_orr[y] = !out.right_edge_orr[y];
         }
 
         // then go from the right across, flipping inner columns
-        for x in 0 .. num_center_cols {
+        for x in 0..num_center_cols {
             // swapping top and bottom edges; note we swap AND negate each flag here
             swap(&mut out.top_edge_orr[x], &mut out.bot_edge_orr[x]);
             swap(&mut out.top_edge_pos[x], &mut out.bot_edge_pos[x]);
@@ -159,15 +159,15 @@ impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
             out.bot_edge_orr[x] = !out.bot_edge_orr[x];
 
             // and center pieces
-            for y in 0 .. (H/2) {
-                let y_opp = H-1 - y;
+            for y in 0..(H / 2) {
+                let y_opp = H - 1 - y;
 
                 let temp = out.centers[y][x];
                 out.centers[y][x] = out.centers[y_opp][x];
                 out.centers[y_opp][x] = temp;
             }
 
-            for y in 0 .. H {
+            for y in 0..H {
                 out.centers[y][x] = !out.centers[y][x];
             }
         }
@@ -176,7 +176,7 @@ impl <const H: usize, const W: usize> Floppy1xMxN<H, W> {
     }
 }
 
-impl <const H: usize, const W: usize>SimpleStartState for Floppy1xMxN<H, W> {
+impl<const H: usize, const W: usize> SimpleStartState for Floppy1xMxN<H, W> {
     type UniqueKey = Self;
 
     fn start() -> Self {
@@ -188,8 +188,8 @@ impl <const H: usize, const W: usize>SimpleStartState for Floppy1xMxN<H, W> {
     }
 }
 
-impl <const H: usize, const W: usize> RandomInit for Floppy1xMxN<H, W> {
-    fn random_state<R: Rng>(r: &mut R) -> Self {
+impl<const H: usize, const W: usize> RandomInit for Floppy1xMxN<H, W> {
+    fn random_state<R: Rng>(_r: &mut R) -> Self {
         todo!("I actually know how to do this now, so we could do it")
     }
 }
@@ -207,7 +207,7 @@ impl CanReverse for Move {
     }
 }
 
-impl <const H: usize, const W: usize> Solvable for Floppy1xMxN<H, W> {
+impl<const H: usize, const W: usize> Solvable for Floppy1xMxN<H, W> {
     type Move = Move;
 
     fn is_solved(&self) -> bool {
@@ -215,8 +215,8 @@ impl <const H: usize, const W: usize> Solvable for Floppy1xMxN<H, W> {
     }
 
     fn available_moves(&self) -> impl IntoIterator<Item = Self::Move> {
-        let u_moves = (0 ..= H).map(Move::U2);
-        let r_moves = (0 ..= W).map(Move::R2);
+        let u_moves = (0..=H).map(Move::U2);
+        let r_moves = (0..=W).map(Move::R2);
 
         u_moves.chain(r_moves)
     }

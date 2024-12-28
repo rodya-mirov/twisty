@@ -1,4 +1,3 @@
-
 use super::*;
 
 const FLOPPY_133: Floppy1xMxN<1, 1> = Floppy1xMxN::<1, 1> {
