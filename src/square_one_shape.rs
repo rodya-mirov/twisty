@@ -1,6 +1,6 @@
-use std::mem::swap;
 use crate::cubesearch::State;
 use crate::idasearch::Solvable;
+use std::mem::swap;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Ord, PartialOrd)]
 enum Piecelet {
@@ -19,7 +19,6 @@ pub struct SquareOneShape {
     // counterclockwise from the front slice point, as viewed from the top
     bot: [Piecelet; 12],
 }
-
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Ord, PartialOrd)]
 pub enum Move {
@@ -81,12 +80,15 @@ impl Solvable for SquareOneShape {
             Move::D(amt) => self.d(amt as usize),
             // note we don't actually check here if this is permissible, needs to be checked
             // in advance
-            Move::Slice => self.slice()
+            Move::Slice => self.slice(),
         }
     }
 
-    fn available_moves(&self) -> impl IntoIterator<Item=Self::Move> {
-        (1 ..= 11).map(Move::U).chain((1 ..= 11).map(Move::D)).chain(std::iter::once(Move::Slice).filter(|_| self.can_slice()))
+    fn available_moves(&self) -> impl IntoIterator<Item = Self::Move> {
+        (1..=11)
+            .map(Move::U)
+            .chain((1..=11).map(Move::D))
+            .chain(std::iter::once(Move::Slice).filter(|_| self.can_slice()))
     }
 
     fn is_redundant(last_move: Self::Move, next_move: Self::Move) -> bool {
@@ -129,7 +131,7 @@ impl State for SquareOneShape {
     where
         Recv: FnMut(Self),
     {
-        for amt in 1 ..= 11 {
+        for amt in 1..=11 {
             to_add(self.u(amt));
             to_add(self.d(amt));
         }
@@ -198,7 +200,7 @@ mod tests {
                 StartCorner,
                 EndCorner,
             ],
-            bot: SquareOneShape::start().bot
+            bot: SquareOneShape::start().bot,
         };
 
         assert_eq!(actual, expected)
@@ -223,7 +225,7 @@ mod tests {
                 Edge,
                 StartCorner,
             ],
-            bot: SquareOneShape::start().bot
+            bot: SquareOneShape::start().bot,
         };
 
         assert_eq!(actual, expected)
@@ -236,8 +238,19 @@ mod tests {
         let expected = SquareOneShape {
             top: SquareOneShape::start().top,
             bot: [
-                EndCorner, Edge, StartCorner,EndCorner, Edge, StartCorner,EndCorner, Edge, StartCorner,EndCorner, Edge, StartCorner,
-            ]
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+            ],
         };
 
         assert_eq!(actual, expected);
@@ -250,8 +263,19 @@ mod tests {
         let expected = SquareOneShape {
             top: SquareOneShape::start().top,
             bot: [
-                StartCorner, EndCorner, Edge, StartCorner,EndCorner, Edge, StartCorner,EndCorner, Edge, StartCorner,EndCorner, Edge,
-            ]
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+            ],
         };
 
         assert_eq!(actual, expected);
@@ -264,18 +288,36 @@ mod tests {
         let expected = SquareOneShape {
             top: [
                 // unaffected portion
-                StartCorner, EndCorner, Edge, StartCorner, EndCorner, Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
                 // flipped portion
                 Edge,
-                StartCorner, EndCorner, Edge, StartCorner, EndCorner
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
             ],
             bot: [
                 // flipped portion
-                StartCorner, EndCorner, Edge, StartCorner, EndCorner, Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
                 // unaffected portion
                 Edge,
-                StartCorner, EndCorner, Edge, StartCorner, EndCorner
-            ]
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+            ],
         };
 
         assert_eq!(expected, actual);
@@ -287,11 +329,33 @@ mod tests {
 
         let expected = SquareOneShape {
             top: [
-                StartCorner, EndCorner, Edge, Edge, StartCorner, EndCorner, StartCorner, EndCorner, Edge, StartCorner, EndCorner, Edge
+                StartCorner,
+                EndCorner,
+                Edge,
+                Edge,
+                StartCorner,
+                EndCorner,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
             ],
             bot: [
-                Edge, StartCorner, EndCorner,StartCorner, EndCorner,Edge, Edge, StartCorner, EndCorner, Edge, StartCorner, EndCorner,
-            ]
+                Edge,
+                StartCorner,
+                EndCorner,
+                StartCorner,
+                EndCorner,
+                Edge,
+                Edge,
+                StartCorner,
+                EndCorner,
+                Edge,
+                StartCorner,
+                EndCorner,
+            ],
         };
 
         assert_eq!(actual, expected);

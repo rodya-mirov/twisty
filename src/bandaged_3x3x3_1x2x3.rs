@@ -460,9 +460,7 @@ impl SimpleStartState for Bandaged3x3x3with1x2x3 {
 
 impl RandomInit for Bandaged3x3x3with1x2x3 {
     fn random_state<R: Rng>(_r: &mut R) -> Self {
-        // TODO: not sure about this yet, still working
-
-        Bandaged3x3x3with1x2x3::solved()
+        todo!("not sure about this yet, still working")
     }
 }
 

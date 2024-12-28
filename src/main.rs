@@ -22,11 +22,13 @@ use crate::idasearch::{no_heuristic, SolveError};
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
+use crate::redi_cube::RediCube;
 use crate::square_one_shape::SquareOneShape;
 
 // reusable state modules
 mod moves;
 mod orientations;
+mod permutation_helpers;
 mod random_helpers;
 mod scrambles;
 
@@ -47,6 +49,7 @@ mod floppy_1xnxn;
 mod mirror_pocket_cube;
 mod pocket_cube;
 mod pyraminx;
+mod redi_cube;
 mod skewb;
 mod square_one_shape;
 
@@ -132,6 +135,7 @@ enum ScrambleAlg {
     Cuboid2x3x3,
     DinoCube,
     Bandaged3x3x3With1x2x3,
+    RediCube,
 }
 
 impl ScrambleAlg {
@@ -144,6 +148,7 @@ impl ScrambleAlg {
             ScrambleAlg::Cuboid2x3x3 => "Cuboid 2x3x3",
             ScrambleAlg::DinoCube => "Dino Cube",
             ScrambleAlg::Bandaged3x3x3With1x2x3 => "Bandaged 3x3x3 with 1x2x3",
+            ScrambleAlg::RediCube => "Redi Cube",
         }
     }
 }
@@ -226,6 +231,10 @@ fn random_scramble(alg: ScrambleAlg) {
         ScrambleAlg::Bandaged3x3x3With1x2x3 => {
             let heuristic = bandaged_3x3x3_1x2x3::make_heuristic();
             Box::new(move || scrambles::random_scramble_string::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic))
+        }
+        ScrambleAlg::RediCube => {
+            let heuristic = redi_cube::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, RediCube, _>(&mut rng, &heuristic))
         }
     };
 
