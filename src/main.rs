@@ -3,14 +3,15 @@
 
 use std::time::Instant;
 
-use crate::bandaged_3x3x3_1x2x3::Bandaged3x3x3with1x2x3;
+use ahash::HashMap;
 use clap::{Parser, Subcommand};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
+use crate::bandaged_3x3x3_1x2x3::Bandaged3x3x3with1x2x3;
 use crate::coin_pyraminx::CoinPyraminx;
-use crate::cubesearch::nice_print;
 use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
+use crate::cubesearch::nice_print;
 use crate::cuboid_2x2x3::Cuboid2x2x3;
 use crate::cuboid_2x3x3::Cuboid2x3x3;
 use crate::dino_cube::DinoCube;
@@ -63,6 +64,9 @@ struct Cli {
 enum Commands {
     #[command(subcommand)]
     ConfigDepth(ConfigAlg),
+    // TODO: somehow figure out how to take more args to a subcommand here, I got tired of googling docs
+    #[command(subcommand)]
+    ConfigDepthSampling(ScrambleAlg),
     #[command(subcommand)]
     RandomScramble(ScrambleAlg),
 }
@@ -195,6 +199,81 @@ fn configuration_depth(alg: ConfigAlg) {
     nice_print(alg.nice_name(), &gn_count);
 }
 
+fn config_depth_sampling(alg: ScrambleAlg) {
+    const NUM_SCRAMBLES: usize = 250_000;
+    println!("Computing {NUM_SCRAMBLES} scramble depths for {}", alg.nice_name());
+
+    println!("Precomputing heuristics...");
+
+    // hard-coded seed for reproducibility
+    // let mut rng = StdRng::from_seed([15; 32]);
+    // random seed for actual scrambling
+    let mut rng = StdRng::from_entropy();
+
+    let setup_time = Instant::now();
+
+    let mut scrambler: Box<dyn FnMut() -> Result<Vec<usize>, SolveError>> = match alg {
+        ScrambleAlg::Floppy1x2x2 => {
+            Box::new(|| scrambles::bulk_scramble::<_, _, Floppy1x2x2, _>(&mut rng, &no_heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::Floppy1x2x3 => {
+            Box::new(|| scrambles::bulk_scramble::<_, _, Floppy1x2x3, _>(&mut rng, &no_heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::Floppy1x3x3 => {
+            Box::new(|| scrambles::bulk_scramble::<_, _, Floppy1x3x3, _>(&mut rng, &no_heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::Cuboid2x2x3 => {
+            let heuristic = cuboid_2x2x3::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble::<_, _, Cuboid2x2x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::Cuboid2x3x3 => {
+            let heuristic = cuboid_2x3x3::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::DinoCube => {
+            let heuristic = dino_cube::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble::<_, _, DinoCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::Bandaged3x3x3With1x2x3 => {
+            let heuristic = bandaged_3x3x3_1x2x3::make_heuristic();
+            Box::new(move || {
+                scrambles::bulk_scramble::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES)
+            })
+        }
+        ScrambleAlg::RediCube => {
+            // turns out sample depth 9 makes it OOM
+            let heuristic = redi_cube::make_heuristic(8);
+            Box::new(move || scrambles::bulk_scramble::<_, _, RediCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+    };
+
+    let elapsed = setup_time.elapsed();
+    println!("Setting up heuristics took {elapsed:?}");
+
+    let start = Instant::now();
+
+    let scramble_lengths: Vec<usize> = scrambler().expect("Should not have any issues");
+
+    let elapsed = start.elapsed();
+    let ms_per_state = (elapsed.as_secs_f32() * 1000.0) / (NUM_SCRAMBLES as f32);
+    println!("Computed {NUM_SCRAMBLES} random states in {elapsed:?} ({ms_per_state:.3} ms per state)");
+
+    let mut length_counts: HashMap<usize, usize> = HashMap::default();
+    for len in scramble_lengths {
+        *length_counts.entry(len).or_default() += 1;
+    }
+
+    let mut items: Vec<(usize, usize)> = length_counts.into_iter().collect();
+    items.sort();
+
+    for (len, count) in items {
+        println!(
+            "    Scramble length {len} had {count} results ({:.3} %)",
+            ((count * 100) as f64) / (NUM_SCRAMBLES as f64)
+        );
+    }
+}
+
 fn random_scramble(alg: ScrambleAlg) {
     const NUM_SCRAMBLES: usize = 10;
     println!("Computing {NUM_SCRAMBLES} random scrambles for {}", alg.nice_name());
@@ -233,7 +312,8 @@ fn random_scramble(alg: ScrambleAlg) {
             Box::new(move || scrambles::random_scramble_string::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic))
         }
         ScrambleAlg::RediCube => {
-            let heuristic = redi_cube::make_heuristic();
+            // heuristic is expensive, turn it down for few scrambles
+            let heuristic = redi_cube::make_heuristic(7);
             Box::new(move || scrambles::random_scramble_string::<_, _, RediCube, _>(&mut rng, &heuristic))
         }
     };
@@ -265,6 +345,7 @@ fn main() {
 
     match cli.command {
         Commands::ConfigDepth(alg) => configuration_depth(alg),
+        Commands::ConfigDepthSampling(alg) => config_depth_sampling(alg),
         Commands::RandomScramble(alg) => random_scramble(alg),
     }
 }

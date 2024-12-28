@@ -64,6 +64,7 @@ pub trait Solvable: Sized + Clone {
     fn max_fuel() -> usize;
 }
 
+#[derive(Debug)]
 pub enum SolveError {
     OutOfGas { max_fuel: usize },
 }

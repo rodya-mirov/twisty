@@ -1,0 +1,13 @@
+Computed 250000 random states in 3266.430076083s (13.066 ms per state)
+    Scramble length 7 had 2 results (0.001 %)
+    Scramble length 8 had 4 results (0.002 %)
+    Scramble length 9 had 52 results (0.021 %)
+    Scramble length 10 had 323 results (0.129 %)
+    Scramble length 11 had 2102 results (0.841 %)
+    Scramble length 12 had 11632 results (4.653 %)
+    Scramble length 13 had 47500 results (19.000 %)
+    Scramble length 14 had 107070 results (42.828 %)
+    Scramble length 15 had 75019 results (30.008 %)
+    Scramble length 16 had 6286 results (2.514 %)
+    Scramble length 17 had 10 results (0.004 %)
+

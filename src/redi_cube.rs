@@ -176,7 +176,7 @@ impl CornerState {
     }
 }
 
-#[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct RediCube {
     edges: EdgeState,
     corners: CornerState,
@@ -408,8 +408,8 @@ impl Solvable for RediCube {
     }
 }
 
-pub fn make_heuristic() -> impl Heuristic<RediCube> {
-    bounded_cache::<RediCube>(8)
+pub fn make_heuristic(max_depth: usize) -> impl Heuristic<RediCube> {
+    bounded_cache::<RediCube>(max_depth)
 }
 
 impl SimpleStartState for RediCube {
