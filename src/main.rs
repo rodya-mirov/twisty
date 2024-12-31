@@ -8,7 +8,6 @@ use clap::{Parser, Subcommand};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
-use crate::bandaged_3x3x3_1x2x3::Bandaged3x3x3with1x2x3;
 use crate::coin_pyraminx::CoinPyraminx;
 use crate::cubesearch::nice_print;
 use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
@@ -24,8 +23,8 @@ use crate::ivy_cube::IvyCube;
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
-use crate::redi_cube::RediCube;
 use crate::square_one_shape::SquareOneShape;
+use crate::square_zero::SquareZero;
 
 // reusable state modules
 mod moves;
@@ -55,6 +54,7 @@ mod pyraminx;
 mod redi_cube;
 mod skewb;
 mod square_one_shape;
+mod square_zero;
 
 #[derive(Parser)]
 struct Cli {
@@ -99,6 +99,7 @@ enum ConfigAlg {
     PyraminxNoTips,
     PyraminxWithTips,
     CoinPyraminx,
+    SquareZero,
     SquareOneShape,
 }
 
@@ -128,6 +129,7 @@ impl ConfigAlg {
             ConfigAlg::PyraminxNoTips => "Pyraminx (No Tips)",
             ConfigAlg::PyraminxWithTips => "Pyraminx (With Tips)",
             ConfigAlg::CoinPyraminx => "Coin Pyraminx",
+            ConfigAlg::SquareZero => "Square Zero",
             ConfigAlg::SquareOneShape => "Square One Shape",
             ConfigAlg::IvyCube => "Ivy Cube",
         }
@@ -145,6 +147,7 @@ enum ScrambleAlg {
     Bandaged3x3x3With1x2x3,
     RediCube,
     IvyCube,
+    SquareZero,
 }
 
 impl ScrambleAlg {
@@ -159,6 +162,7 @@ impl ScrambleAlg {
             ScrambleAlg::Bandaged3x3x3With1x2x3 => "Bandaged 3x3x3 with 1x2x3",
             ScrambleAlg::RediCube => "Redi Cube",
             ScrambleAlg::IvyCube => "Ivy Cube",
+            ScrambleAlg::SquareZero => "Square Zero",
         }
     }
 }
@@ -198,6 +202,7 @@ fn configuration_depth(alg: ConfigAlg) {
         }
         ConfigAlg::CoinPyraminx => enumerate_state_space::<CoinPyraminx>(),
         ConfigAlg::SquareOneShape => enumerate_state_space::<SquareOneShape>(),
+        ConfigAlg::SquareZero => enumerate_state_space::<SquareZero>(),
         ConfigAlg::IvyCube => enumerate_state_space::<IvyCube>(),
     };
 
@@ -231,30 +236,32 @@ fn config_depth_sampling(alg: ScrambleAlg) {
         }
         ScrambleAlg::Cuboid2x2x3 => {
             let heuristic = cuboid_2x2x3::make_heuristic();
-            Box::new(move || scrambles::bulk_scramble::<_, _, Cuboid2x2x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
         ScrambleAlg::Cuboid2x3x3 => {
             let heuristic = cuboid_2x3x3::make_heuristic();
-            Box::new(move || scrambles::bulk_scramble::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
         ScrambleAlg::DinoCube => {
             let heuristic = dino_cube::make_heuristic();
-            Box::new(move || scrambles::bulk_scramble::<_, _, DinoCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
         ScrambleAlg::Bandaged3x3x3With1x2x3 => {
             let heuristic = bandaged_3x3x3_1x2x3::make_heuristic();
-            Box::new(move || {
-                scrambles::bulk_scramble::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic, NUM_SCRAMBLES)
-            })
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
         ScrambleAlg::RediCube => {
             // turns out sample depth 9 makes it OOM
             let heuristic = redi_cube::make_heuristic(8);
-            Box::new(move || scrambles::bulk_scramble::<_, _, RediCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::SquareZero => {
+            let heuristic = square_zero::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
         ScrambleAlg::IvyCube => {
             let heuristic = ivy_cube::make_heuristic();
-            Box::new(move || scrambles::bulk_scramble::<_, _, IvyCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
     };
 
@@ -308,28 +315,32 @@ fn random_scramble(alg: ScrambleAlg) {
         }
         ScrambleAlg::Cuboid2x2x3 => {
             let heuristic = cuboid_2x2x3::make_heuristic();
-            Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x2x3, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
         ScrambleAlg::Cuboid2x3x3 => {
             let heuristic = cuboid_2x3x3::make_heuristic();
-            Box::new(move || scrambles::random_scramble_string::<_, _, Cuboid2x3x3, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
         ScrambleAlg::DinoCube => {
             let heuristic = dino_cube::make_heuristic();
-            Box::new(move || scrambles::random_scramble_string::<_, _, DinoCube, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
         ScrambleAlg::Bandaged3x3x3With1x2x3 => {
             let heuristic = bandaged_3x3x3_1x2x3::make_heuristic();
-            Box::new(move || scrambles::random_scramble_string::<_, _, Bandaged3x3x3with1x2x3, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
         ScrambleAlg::RediCube => {
             // heuristic is expensive, turn it down for few scrambles
             let heuristic = redi_cube::make_heuristic(7);
-            Box::new(move || scrambles::random_scramble_string::<_, _, RediCube, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
+        }
+        ScrambleAlg::SquareZero => {
+            let heuristic = square_zero::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
         ScrambleAlg::IvyCube => {
             let heuristic = ivy_cube::make_heuristic();
-            Box::new(move || scrambles::random_scramble_string::<_, _, IvyCube, _>(&mut rng, &heuristic))
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
     };
 
