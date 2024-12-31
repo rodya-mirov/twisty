@@ -150,15 +150,15 @@ struct CornerState {
 impl CornerState {
     #[inline(always)]
     fn pack(self, source: &mut u64) {
-        self.ufl.pack_two_bits(source);
-        self.ufr.pack_two_bits(source);
-        self.ubl.pack_two_bits(source);
-        self.ubr.pack_two_bits(source);
+        self.ufl.pack_two_bits_u64(source);
+        self.ufr.pack_two_bits_u64(source);
+        self.ubl.pack_two_bits_u64(source);
+        self.ubr.pack_two_bits_u64(source);
 
-        self.dfl.pack_two_bits(source);
-        self.dfr.pack_two_bits(source);
-        self.dbl.pack_two_bits(source);
-        self.dbr.pack_two_bits(source);
+        self.dfl.pack_two_bits_u64(source);
+        self.dfr.pack_two_bits_u64(source);
+        self.dbl.pack_two_bits_u64(source);
+        self.dbr.pack_two_bits_u64(source);
     }
 
     #[inline(always)]
@@ -488,8 +488,9 @@ impl RandomInit for RediCube {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::moves::CornerTwistAmt::{Ccw, Cw};
+
+    use super::*;
 
     #[test]
     fn total_perm_test() {

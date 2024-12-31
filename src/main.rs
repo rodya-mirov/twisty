@@ -10,8 +10,8 @@ use rand::SeedableRng;
 
 use crate::bandaged_3x3x3_1x2x3::Bandaged3x3x3with1x2x3;
 use crate::coin_pyraminx::CoinPyraminx;
-use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
 use crate::cubesearch::nice_print;
+use crate::cubesearch::{enumerate_state_space, enumerate_state_space_started};
 use crate::cuboid_2x2x3::Cuboid2x2x3;
 use crate::cuboid_2x3x3::Cuboid2x3x3;
 use crate::dino_cube::DinoCube;
@@ -20,6 +20,7 @@ use crate::floppy_1x2x3::Floppy1x2x3;
 use crate::floppy_1x3x3::Floppy1x3x3;
 use crate::floppy_1xnxn::Floppy1xMxN;
 use crate::idasearch::{no_heuristic, SolveError};
+use crate::ivy_cube::IvyCube;
 use crate::mirror_pocket_cube::MirrorPocketCube;
 use crate::pocket_cube::PocketCube;
 use crate::pyraminx::Pyraminx;
@@ -47,6 +48,7 @@ mod floppy_1x2x2;
 mod floppy_1x2x3;
 mod floppy_1x3x3;
 mod floppy_1xnxn;
+mod ivy_cube;
 mod mirror_pocket_cube;
 mod pocket_cube;
 mod pyraminx;
@@ -90,6 +92,7 @@ enum ConfigAlg {
     Cuboid2x3x3,
     DinoCubeOneSolution,
     DinoCubeEitherSolution,
+    IvyCube,
     Skewb,
     MirrorPocketCube,
     PocketCube,
@@ -126,6 +129,7 @@ impl ConfigAlg {
             ConfigAlg::PyraminxWithTips => "Pyraminx (With Tips)",
             ConfigAlg::CoinPyraminx => "Coin Pyraminx",
             ConfigAlg::SquareOneShape => "Square One Shape",
+            ConfigAlg::IvyCube => "Ivy Cube",
         }
     }
 }
@@ -140,6 +144,7 @@ enum ScrambleAlg {
     DinoCube,
     Bandaged3x3x3With1x2x3,
     RediCube,
+    IvyCube,
 }
 
 impl ScrambleAlg {
@@ -153,6 +158,7 @@ impl ScrambleAlg {
             ScrambleAlg::DinoCube => "Dino Cube",
             ScrambleAlg::Bandaged3x3x3With1x2x3 => "Bandaged 3x3x3 with 1x2x3",
             ScrambleAlg::RediCube => "Redi Cube",
+            ScrambleAlg::IvyCube => "Ivy Cube",
         }
     }
 }
@@ -192,6 +198,7 @@ fn configuration_depth(alg: ConfigAlg) {
         }
         ConfigAlg::CoinPyraminx => enumerate_state_space::<CoinPyraminx>(),
         ConfigAlg::SquareOneShape => enumerate_state_space::<SquareOneShape>(),
+        ConfigAlg::IvyCube => enumerate_state_space::<IvyCube>(),
     };
 
     println!("Processing took {elapsed:?}");
@@ -244,6 +251,10 @@ fn config_depth_sampling(alg: ScrambleAlg) {
             // turns out sample depth 9 makes it OOM
             let heuristic = redi_cube::make_heuristic(8);
             Box::new(move || scrambles::bulk_scramble::<_, _, RediCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
+        ScrambleAlg::IvyCube => {
+            let heuristic = ivy_cube::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble::<_, _, IvyCube, _>(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
     };
 
@@ -315,6 +326,10 @@ fn random_scramble(alg: ScrambleAlg) {
             // heuristic is expensive, turn it down for few scrambles
             let heuristic = redi_cube::make_heuristic(7);
             Box::new(move || scrambles::random_scramble_string::<_, _, RediCube, _>(&mut rng, &heuristic))
+        }
+        ScrambleAlg::IvyCube => {
+            let heuristic = ivy_cube::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string::<_, _, IvyCube, _>(&mut rng, &heuristic))
         }
     };
 

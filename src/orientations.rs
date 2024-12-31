@@ -32,8 +32,14 @@ impl Distribution<CornerOrientation> for Standard {
 
 impl CornerOrientation {
     #[inline(always)]
-    pub fn pack_two_bits(self, source: &mut u64) {
+    pub fn pack_two_bits_u64(self, source: &mut u64) {
         *source = (*source << 2) + (self.as_u8_two_bits() as u64);
+    }
+
+    // TODO: unite this and the above as a trait maybe?
+    #[inline(always)]
+    pub fn pack_two_bits_u32(self, source: &mut u32) {
+        *source = (*source << 2) + (self.as_u8_two_bits() as u32);
     }
 
     /// A simple cast to u8 for encoding. Guaranteed to have minimal size, that is,

@@ -1,8 +1,9 @@
 //! Reusable functionality for shuffles, scrambles, and other random initalization logic.
 
-use crate::orientations::EdgeOrientation;
 use derive_more::Display;
 use rand::Rng;
+
+use crate::orientations::EdgeOrientation;
 
 #[derive(Ord, PartialEq, Eq, PartialOrd, Debug, Display)]
 pub enum TwoParity {

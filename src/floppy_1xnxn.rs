@@ -1,6 +1,7 @@
+use std::mem::swap;
+
 use derive_more::Display;
 use rand::Rng;
-use std::mem::swap;
 
 use crate::cubesearch::SimpleStartState;
 use crate::idasearch::Solvable;

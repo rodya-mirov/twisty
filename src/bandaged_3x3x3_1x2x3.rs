@@ -466,9 +466,11 @@ impl RandomInit for Bandaged3x3x3with1x2x3 {
 
 #[cfg(test)]
 mod tests {
-    use super::CornerCubelet;
-    use ahash::HashSet;
     use std::collections::VecDeque;
+
+    use ahash::HashSet;
+
+    use super::CornerCubelet;
 
     #[derive(Copy, Clone, Hash, Eq, PartialEq, Debug)]
     struct CornerPositionState {

@@ -1,10 +1,10 @@
 use std::fmt::Formatter;
 
-use crate::cubesearch::SimpleStartState;
 use derive_more::Display;
 use enum_iterator::{all, Sequence};
 use rand::Rng;
 
+use crate::cubesearch::SimpleStartState;
 use crate::idasearch::heuristic_helpers::bounded_cache;
 use crate::idasearch::{Heuristic, Solvable};
 use crate::moves::{CanReverse, CornerTwistAmt};
@@ -277,8 +277,8 @@ impl Solvable for DinoCube {
             // bottom back
             Move(Dir::DBL, CornerTwistAmt::Cw),
             Move(Dir::DBL, CornerTwistAmt::Ccw),
-            Move(Dir::DBL, CornerTwistAmt::Cw),
-            Move(Dir::DBL, CornerTwistAmt::Ccw),
+            Move(Dir::DBR, CornerTwistAmt::Cw),
+            Move(Dir::DBR, CornerTwistAmt::Ccw),
             // bottom back double slices
             Move(Dir::DBLw, CornerTwistAmt::Cw),
             Move(Dir::DBLw, CornerTwistAmt::Ccw),

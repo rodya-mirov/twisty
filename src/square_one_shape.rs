@@ -1,6 +1,7 @@
+use std::mem::swap;
+
 use crate::cubesearch::State;
 use crate::idasearch::Solvable;
-use std::mem::swap;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, Ord, PartialOrd)]
 enum Piecelet {

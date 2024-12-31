@@ -1,11 +1,13 @@
-use crate::idasearch;
-use crate::idasearch::{Heuristic, Solvable, SolveError};
-use crate::moves::CanReverse;
-use rand::Rng;
-use rayon::prelude::*;
 use std::fmt::Display;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
+
+use rand::Rng;
+use rayon::prelude::*;
+
+use crate::idasearch;
+use crate::idasearch::{Heuristic, Solvable, SolveError};
+use crate::moves::CanReverse;
 
 pub trait RandomInit: Sized {
     fn random_state<R: Rng>(r: &mut R) -> Self;
