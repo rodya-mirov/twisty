@@ -1,0 +1,33 @@
+#!/bin/sh
+
+if [[ $(git diff) ]]; then
+  echo "You have unstaged changes; please stage or stash all changes before committing."
+  exit 1
+fi
+
+set -e
+
+echo "== Running pre-commit scripts ==="
+
+echo "Running cargo +nightly fmt"
+if ! cargo +nightly fmt ; then
+  echo "The formatter failed; if it had strange errors, ensure that cargo is installed and runnable"
+  echo "If cargo fmt works but cargo +nightly fmt doesn't work, or if your fmt results don't match CI,"
+  echo "try updating your rustfmt version (we pin to latest working nightly) with the following:"
+  echo "    rustup toolchain install nightly --allow-downgrade -c rustfmt"
+  exit 1
+fi
+
+echo "Running cargo check"
+if ! cargo check ; then
+  echo "The code failed to compile; if it had strange errors, ensure that cargo is installed and runnable"
+  exit 1
+fi
+
+echo "Running cargo check --tests"
+if ! cargo check --tests ; then
+  echo "The test code failed to compile; if it had strange errors, ensure that cargo is installed and runnable"
+  exit 1
+fi
+
+git add .
