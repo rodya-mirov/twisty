@@ -42,6 +42,7 @@ mod bandaged_3x3x3_1x2x3;
 mod coin_pyraminx;
 mod cuboid_2x2x3;
 mod cuboid_2x3x3;
+mod curvy_copter;
 mod dino_cube;
 mod floppy_1x2x2;
 mod floppy_1x2x3;
@@ -148,6 +149,7 @@ enum ScrambleAlg {
     RediCube,
     IvyCube,
     SquareZero,
+    CurvyCopter,
 }
 
 impl ScrambleAlg {
@@ -163,6 +165,7 @@ impl ScrambleAlg {
             ScrambleAlg::RediCube => "Redi Cube",
             ScrambleAlg::IvyCube => "Ivy Cube",
             ScrambleAlg::SquareZero => "Square Zero",
+            ScrambleAlg::CurvyCopter => "Curvy Copter",
         }
     }
 }
@@ -263,6 +266,10 @@ fn config_depth_sampling(alg: ScrambleAlg) {
             let heuristic = ivy_cube::make_heuristic();
             Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
         }
+        ScrambleAlg::CurvyCopter => {
+            let heuristic = curvy_copter::make_heuristic();
+            Box::new(move || scrambles::bulk_scramble(&mut rng, &heuristic, NUM_SCRAMBLES))
+        }
     };
 
     let elapsed = setup_time.elapsed();
@@ -340,6 +347,10 @@ fn random_scramble(alg: ScrambleAlg) {
         }
         ScrambleAlg::IvyCube => {
             let heuristic = ivy_cube::make_heuristic();
+            Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
+        }
+        ScrambleAlg::CurvyCopter => {
+            let heuristic = curvy_copter::make_heuristic();
             Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
     };

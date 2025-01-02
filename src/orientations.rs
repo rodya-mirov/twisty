@@ -11,6 +11,47 @@ pub enum CornerOrientation {
     CCW,
 }
 
+impl CornerOrientation {
+    pub fn flip(&self) -> Self {
+        match *self {
+            CornerOrientation::Normal => CornerOrientation::Normal,
+            CornerOrientation::CW => CornerOrientation::CCW,
+            CornerOrientation::CCW => CornerOrientation::CW,
+        }
+    }
+
+    pub fn total(orientations: &[CornerOrientation]) -> CornerOrientation {
+        let mut total = CornerOrientation::Normal;
+
+        for o in orientations.iter().copied() {
+            total = total + o;
+        }
+
+        total
+    }
+}
+
+impl std::ops::Add for CornerOrientation {
+    type Output = CornerOrientation;
+
+    #[inline(always)]
+    fn add(self, rhs: Self) -> Self::Output {
+        match self {
+            CornerOrientation::Normal => rhs,
+            CornerOrientation::CW => match rhs {
+                CornerOrientation::Normal => CornerOrientation::CW,
+                CornerOrientation::CW => CornerOrientation::CCW,
+                CornerOrientation::CCW => CornerOrientation::Normal,
+            },
+            CornerOrientation::CCW => match rhs {
+                CornerOrientation::Normal => CornerOrientation::CCW,
+                CornerOrientation::CW => CornerOrientation::Normal,
+                CornerOrientation::CCW => CornerOrientation::CW,
+            },
+        }
+    }
+}
+
 impl Default for CornerOrientation {
     fn default() -> Self {
         Self::Normal
@@ -80,6 +121,12 @@ impl CornerOrientation {
     pub fn ccw_mut(&mut self) {
         *self = self.ccw()
     }
+
+    // needed for some macros; just don't do any changes
+    #[inline(always)]
+    pub fn no_swap(self) -> Self {
+        self
+    }
 }
 
 /// A two-variant orientation enum which behaves like edges in many common types of twist puzzles.
@@ -112,12 +159,17 @@ impl EdgeOrientation {
         }
     }
     /// A simple cast to u8 for encoding. Guaranteed to have minimal size, that is,
-    /// using at most one bits.
+    /// using at most one bit.
     #[inline(always)]
     pub fn as_u8_one_bit(self) -> u8 {
         match self {
             EdgeOrientation::Normal => 0,
             EdgeOrientation::Flipped => 1,
         }
+    }
+
+    #[inline(always)]
+    pub fn pack(self, bits: &mut u64) {
+        *bits = (*bits << 1) + (self.as_u8_one_bit() as u64)
     }
 }

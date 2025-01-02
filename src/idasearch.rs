@@ -119,6 +119,7 @@ pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Result<V
     }
 
     for fuel in 0..=max_fuel {
+        // let iter_start = Instant::now();
         let mut solution = Vec::new();
 
         let sr = dfs(state, heuristic, &mut solution, fuel);
@@ -126,6 +127,8 @@ pub fn solve<S: Solvable, H: Heuristic<S>>(state: &S, heuristic: &H) -> Result<V
         if sr == SearchResult::Found {
             return Ok(solution);
         }
+
+        // println!("With fuel {fuel}, failed to find a solution in {:?}", iter_start.elapsed());
     }
 
     Err(OutOfGas { max_fuel })
