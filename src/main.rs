@@ -1,5 +1,6 @@
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::assertions_on_constants)]
+#![allow(clippy::collapsible_else_if)] // sometimes it allows more symmetrical code, bite me
 
 use std::time::Instant;
 
@@ -215,6 +216,7 @@ fn configuration_depth(alg: ConfigAlg) {
 }
 
 fn config_depth_sampling(alg: ScrambleAlg) {
+    // TODO: make this a config argument
     const NUM_SCRAMBLES: usize = 250_000;
     println!("Computing {NUM_SCRAMBLES} scramble depths for {}", alg.nice_name());
 
@@ -300,13 +302,15 @@ fn config_depth_sampling(alg: ScrambleAlg) {
 }
 
 fn random_scramble(alg: ScrambleAlg) {
+    // TODO: make this a clap argument
     const NUM_SCRAMBLES: usize = 10;
     println!("Computing {NUM_SCRAMBLES} random scrambles for {}", alg.nice_name());
 
+    // TODO: make this a clap argument
     // hard-coded seed for reproducibility
-    // let mut rng = StdRng::from_seed([15; 32]);
+    let mut rng = StdRng::from_seed([15; 32]);
     // random seed for actual scrambling
-    let mut rng = StdRng::from_entropy();
+    // let mut rng = StdRng::from_entropy();
 
     let setup_time = Instant::now();
 
@@ -338,6 +342,7 @@ fn random_scramble(alg: ScrambleAlg) {
         }
         ScrambleAlg::RediCube => {
             // heuristic is expensive, turn it down for few scrambles
+            // TODO: make this depth a config argument
             let heuristic = redi_cube::make_heuristic(7);
             Box::new(move || scrambles::random_scramble_string(&mut rng, &heuristic))
         }
@@ -358,6 +363,8 @@ fn random_scramble(alg: ScrambleAlg) {
     let elapsed = setup_time.elapsed();
     println!("Setting up heuristics took {elapsed:?}");
 
+    let scrambles_time = Instant::now();
+
     for i in 0..NUM_SCRAMBLES {
         let start = Instant::now();
         let scramble_result = scrambler();
@@ -375,6 +382,9 @@ fn random_scramble(alg: ScrambleAlg) {
             }
         }
     }
+
+    let elapsed = scrambles_time.elapsed();
+    println!("Total scramble generation time {elapsed:?}");
 }
 
 fn main() {

@@ -11,6 +11,18 @@ pub struct BoundedStateCache<H: Hash + Eq> {
     fallback_depth: usize,
 }
 
+impl<H: Hash + Eq> BoundedStateCache<H> {
+    #[inline(always)]
+    pub fn fallback_depth(&self) -> usize {
+        self.fallback_depth
+    }
+
+    #[inline]
+    pub fn remaining_cost_if_known<S: State<UniqueKey = H>>(&self, t: &S) -> Option<usize> {
+        self.stored.get(&t.uniq_key()).copied()
+    }
+}
+
 impl<H: Hash + Eq, S: State<UniqueKey = H>> Heuristic<S> for BoundedStateCache<H> {
     fn estimated_remaining_cost(&self, t: &S) -> usize {
         self.stored.get(&t.uniq_key()).copied().unwrap_or(self.fallback_depth)

@@ -11,3 +11,42 @@ Computed 250000 random states in 3266.430076083s (13.066 ms per state)
     Scramble length 16 had 6286 results (2.514 %)
     Scramble length 17 had 10 results (0.004 %)
 
+No Rules; 10 scrambles, fixed seed
+  depth 7
+    scramble time 6.66s
+    0% hit rate
+  depth 8
+    scramble time 1.16s
+    0% hit rate
+
+Rule 1; 10 scrambles, fixed seed
+  depth 7
+    scramble time 7.50s
+    1.33% hit rate
+  depth 8
+    scramble time 1.58s
+    0.07% hit rate
+
+Rules 1 and 2; 10 scrambles, fixed seed
+  depth 7
+    scramble time 12.42s
+    9.71% hit rate
+  depth 8
+    scramble time 1.91s
+    2.20% hit rate
+
+Rules 1 and 3; 10 scrambles, fixed seed
+  depth 7
+    scramble time 6.89s
+    29.53% hit rate
+  depth 8
+    scramble time 1.58s
+    11.70% hit rate
+
+Rules 1, 2, and 3 (full); 10 scrambles, fixed seed
+  depth 7
+    scramble time 2.09s
+    57.62% hit rate
+  depth 8
+    scramble time 1.15s
+    26.88% hit rate

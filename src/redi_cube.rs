@@ -1,9 +1,11 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use derive_more::Display;
 use enum_iterator::Sequence;
 use rand::Rng;
 
 use crate::cubesearch::SimpleStartState;
-use crate::idasearch::heuristic_helpers::bounded_cache;
+use crate::idasearch::heuristic_helpers::{bounded_cache, BoundedStateCache};
 use crate::idasearch::{Heuristic, Solvable};
 use crate::moves::{CanReverse, CornerTwistAmt};
 use crate::orientations::CornerOrientation;
@@ -277,6 +279,19 @@ impl CanReverse for Move {
     }
 }
 
+macro_rules! do_twist {
+    ($corner_name:ident, $amt_name:ident, $out:ident) => {
+        match $amt_name {
+            CornerTwistAmt::Cw => $out.$corner_name(),
+            // inlining should eliminate the repetition here
+            CornerTwistAmt::Ccw => {
+                $out.$corner_name();
+                $out.$corner_name();
+            }
+        }
+    };
+}
+
 impl Solvable for RediCube {
     type Move = Move;
 
@@ -334,71 +349,15 @@ impl Solvable for RediCube {
     fn apply(&self, m: Self::Move) -> Self {
         let mut out = self.clone();
         match m {
-            Move::UFR(amt) => match amt {
-                CornerTwistAmt::Cw => out.ufr(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.ufr();
-                    out.ufr();
-                }
-            },
-            Move::UFL(amt) => match amt {
-                CornerTwistAmt::Cw => out.ufl(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.ufl();
-                    out.ufl();
-                }
-            },
-            Move::UBL(amt) => match amt {
-                CornerTwistAmt::Cw => out.ubl(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.ubl();
-                    out.ubl();
-                }
-            },
-            Move::UBR(amt) => match amt {
-                CornerTwistAmt::Cw => out.ubr(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.ubr();
-                    out.ubr();
-                }
-            },
+            Move::UFR(amt) => do_twist!(ufr, amt, out),
+            Move::UFL(amt) => do_twist!(ufl, amt, out),
+            Move::UBL(amt) => do_twist!(ubl, amt, out),
+            Move::UBR(amt) => do_twist!(ubr, amt, out),
 
-            Move::DFR(amt) => match amt {
-                CornerTwistAmt::Cw => out.dfr(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.dfr();
-                    out.dfr();
-                }
-            },
-            Move::DFL(amt) => match amt {
-                CornerTwistAmt::Cw => out.dfl(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.dfl();
-                    out.dfl();
-                }
-            },
-            Move::DBL(amt) => match amt {
-                CornerTwistAmt::Cw => out.dbl(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.dbl();
-                    out.dbl();
-                }
-            },
-            Move::DBR(amt) => match amt {
-                CornerTwistAmt::Cw => out.dbr(),
-                // inlining should eliminate the repetition here
-                CornerTwistAmt::Ccw => {
-                    out.dbr();
-                    out.dbr();
-                }
-            },
+            Move::DFR(amt) => do_twist!(dfr, amt, out),
+            Move::DFL(amt) => do_twist!(dfl, amt, out),
+            Move::DBL(amt) => do_twist!(dbl, amt, out),
+            Move::DBR(amt) => do_twist!(dbr, amt, out),
         }
         out
     }
@@ -408,8 +367,316 @@ impl Solvable for RediCube {
     }
 }
 
+// TODO: generify this somehow so I can use it in other places, if it works
+struct RediHeuristic {
+    bounded_cache: BoundedStateCache<u64>,
+    heuristic_hits: AtomicUsize,
+    heuristic_misses: AtomicUsize,
+}
+
+impl Drop for RediHeuristic {
+    fn drop(&mut self) {
+        let hits = self.heuristic_hits.load(Ordering::Relaxed);
+        let misses = self.heuristic_misses.load(Ordering::Relaxed);
+        let pct = (hits as f32) / ((hits + misses) as f32) * 100.0;
+        println!(
+            "Final stats for redi heuristic: {hits} heuristic hits and {misses} heuristic misses ({pct:.2}% hit rate)"
+        )
+    }
+}
+
+impl Heuristic<RediCube> for RediHeuristic {
+    fn estimated_remaining_cost(&self, t: &RediCube) -> usize {
+        if let Some(known_cost) = self.bounded_cache.remaining_cost_if_known(t) {
+            return known_cost;
+        }
+
+        let fb = self.bounded_cache.fallback_depth();
+        let heuristic = dist_heuristic(t);
+
+        if heuristic > fb {
+            self.heuristic_hits.fetch_add(1, Ordering::Relaxed);
+        } else {
+            self.heuristic_misses.fetch_add(1, Ordering::Relaxed);
+        }
+
+        fb.max(heuristic)
+    }
+}
+
+// compute the minimum cost (number of times this edge cubelet must move) based on the
+// orientations of its associated corners. This is assuming the cubelet is in its home position.
+#[inline(always)]
+fn in_place_cost(corner_a_orr: CornerOrientation, corner_b_orr: CornerOrientation) -> usize {
+    if corner_a_orr == CornerOrientation::Normal {
+        if corner_b_orr == CornerOrientation::Normal {
+            0
+        } else {
+            2
+        }
+    } else {
+        if corner_b_orr == CornerOrientation::Normal {
+            2
+        } else {
+            4
+        }
+    }
+}
+
+// compute the minimum cost (number of times this edge cubelet must move) based on the
+// orientation of its attached corner. This is assuming the edge cubelet is one away from its
+// home; that is, it's attached to one of its associated corners, but not the other.
+// The arguments pertain to the actual orientation of that corner as well as the expected one
+// (expected meaning "the edge and corner agree, so you can send it home in one move")
+#[inline(always)]
+fn one_off_cost(expected_corner_orr: CornerOrientation, actual_corner_orr: CornerOrientation) -> usize {
+    if actual_corner_orr == expected_corner_orr {
+        1
+    } else {
+        3
+    }
+}
+
+// good candidate for inlining because very often one of the arguments is constant, so LLVM
+// can unroll it to a very simple comparison. Too bad const generics doesn't yet allow ADTs as
+// generics to optimize out
+//
+// :param: source_position -- this is the slot the cubelet came from (essentially the field name)
+// :param: goal_position -- slot the cubelet wants to go to; this "is" the thing of interest
+#[inline(always)]
+fn dist(source_position: EdgeCubelet, goal_position: EdgeCubelet, cube: &RediCube) -> usize {
+    match goal_position {
+        EdgeCubelet::UF => {
+            // using this as a baseline, computed very carefully by hand
+            let left_corner = cube.corners.ufl;
+            let right_corner = cube.corners.ufr;
+            match source_position {
+                EdgeCubelet::UF => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DB => 3,
+                EdgeCubelet::UL => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::FL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UR => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::FR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::UL => {
+            // rotation is y (or y', i can never remember the notation) from UF
+            let left_corner = cube.corners.ubl;
+            let right_corner = cube.corners.ufl;
+            match source_position {
+                EdgeCubelet::UL => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DR => 3,
+                EdgeCubelet::UB => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::BL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UF => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::FL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::UR => {
+            // rotation is y (or y', i can never remember the notation) from UF
+            let left_corner = cube.corners.ufr;
+            let right_corner = cube.corners.ubr;
+            match source_position {
+                EdgeCubelet::UR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DL => 3,
+                EdgeCubelet::UF => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::FR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UB => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::BR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::UB => {
+            // rotation is basically y2 from UF
+            let left_corner = cube.corners.ubr;
+            let right_corner = cube.corners.ubl;
+            match source_position {
+                EdgeCubelet::UB => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DF => 3,
+                EdgeCubelet::UR => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::BR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UL => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::BL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::DF => {
+            // rotation is basically z2 from UF
+            let left_corner = cube.corners.dfl;
+            let right_corner = cube.corners.dfr;
+            match source_position {
+                EdgeCubelet::DF => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UB => 3,
+                EdgeCubelet::DR => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::FR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DL => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::FL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::DL => {
+            // rotation is basically z2 from UL
+            let left_corner = cube.corners.dfl;
+            let right_corner = cube.corners.dbl;
+            match source_position {
+                EdgeCubelet::DL => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UR => 3,
+                EdgeCubelet::DF => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::FL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DB => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::BL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::DR => {
+            // rotation is basically z2 from UR
+            let left_corner = cube.corners.dbr;
+            let right_corner = cube.corners.dfr;
+            match source_position {
+                EdgeCubelet::DR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UL => 3,
+                EdgeCubelet::DB => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::BR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DF => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::FR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::DB => {
+            // rotation is basically z2 from UB, or x2 from UF
+            let left_corner = cube.corners.dbl;
+            let right_corner = cube.corners.dbr;
+            match source_position {
+                EdgeCubelet::DB => in_place_cost(cube.corners.dbl, cube.corners.dbr),
+                EdgeCubelet::UF => 3,
+                // from UL, FL, UR, FR
+                EdgeCubelet::DL => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::BL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DR => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::BR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        // for mid layer, when choosing which face gets rotated to top, prefer F/B over L/R
+        EdgeCubelet::FL => {
+            let left_corner = cube.corners.ufl;
+            let right_corner = cube.corners.dfl;
+            match source_position {
+                EdgeCubelet::FL => in_place_cost(cube.corners.dbl, cube.corners.dbr),
+                EdgeCubelet::BR => 3,
+                EdgeCubelet::UF => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::UL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DF => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::DL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::FR => {
+            let left_corner = cube.corners.dfr;
+            let right_corner = cube.corners.ufr;
+            match source_position {
+                EdgeCubelet::FR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::BL => 3,
+                EdgeCubelet::DF => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::DR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UF => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::UR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::BL => {
+            let left_corner = cube.corners.dbl;
+            let right_corner = cube.corners.ubl;
+            match source_position {
+                EdgeCubelet::BL => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::FR => 3,
+                EdgeCubelet::DB => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::DL => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::UB => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::UL => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+        EdgeCubelet::BR => {
+            let left_corner = cube.corners.ubr;
+            let right_corner = cube.corners.dbr;
+            match source_position {
+                EdgeCubelet::BR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::FL => 3,
+                EdgeCubelet::UB => one_off_cost(left_corner, CornerOrientation::CCW),
+                EdgeCubelet::UR => one_off_cost(left_corner, CornerOrientation::CW),
+                EdgeCubelet::DB => one_off_cost(right_corner, CornerOrientation::CW),
+                EdgeCubelet::DR => one_off_cost(right_corner, CornerOrientation::CCW),
+                _ => 2,
+            }
+        }
+    }
+}
+
+fn dist_heuristic(cube: &RediCube) -> usize {
+    // some ideas:
+    // 1. given an edge and a goal position, there is a minimum number of moves required to get
+    //      it to that position; one position is correct, four are one away, six are two away,
+    //      and one is three away
+    // 2. if an edge is in the right place but the corner is wrong, it takes at least two moves
+    //      to fix it (4 if both corners are wrong); this is not totally obvious but it is true
+    // 3. if an edge is one away, and the relevant corner is at the incorrect orientation, it takes
+    //      at least three moves to fix it; this is true for basically the same reason
+    // each actual move can move at most three edges at a time, so (super sloppy) can add up
+    // all those numbers, divide by three (round up) and that's the minimum number of twists to
+    // solve the whole puzzle
+    //
+    // For a "random" puzzle these rules give costs as follows:
+    //  - Rule 1 only:  19 edge moves (cost rounds up to 7)
+    //                      1*0 + 4*1 + 6*2 + 1*3
+    //  - Rules 1-2:    21 + 2/3 edge moves (cost rounds up to 8)
+    //                      1*(0 + 2*4/9 + 4*4/9) + 4*1 + 6*2 + 1*3
+    //  - Rules 1-3:    27 (cost of 9)
+    //                      1*(0 + 2*4/9 + 4*4/9) + 4*(1*1/3 + 3*2/3) + 6*2 + 1*3
+    //
+    // experimentally; define a "hit rate" as the percentage of states where this gives a higher
+    // cost than the bounded cache's fallback depth.
+    //
+    // against cache of depth 7 (so heuristic cost must be at least 9 to matter):
+    // - using just rule 1, we get about 1% hit rate
+    // - using rules 1 and 2, we get about 9-10% hit rate
+    //
+    // against cache of depth 8 (so heuristic cost must be at least 10 to matter):
+    // - using just rule 1, we get less than 0.1% hit rate (essentially nothing)
+    // - using rules 1 and 2, we get about 2% hit rate
+    let mut total_cost = 0;
+
+    // upper layer
+    total_cost += dist(EdgeCubelet::UF, cube.edges.uf, cube);
+    total_cost += dist(EdgeCubelet::UL, cube.edges.ul, cube);
+    total_cost += dist(EdgeCubelet::UR, cube.edges.ur, cube);
+    total_cost += dist(EdgeCubelet::UB, cube.edges.ub, cube);
+
+    // lower layer
+    total_cost += dist(EdgeCubelet::DF, cube.edges.df, cube);
+    total_cost += dist(EdgeCubelet::DL, cube.edges.dl, cube);
+    total_cost += dist(EdgeCubelet::DR, cube.edges.dr, cube);
+    total_cost += dist(EdgeCubelet::DB, cube.edges.db, cube);
+
+    // mid layer
+    total_cost += dist(EdgeCubelet::FL, cube.edges.fl, cube);
+    total_cost += dist(EdgeCubelet::FR, cube.edges.fr, cube);
+    total_cost += dist(EdgeCubelet::BL, cube.edges.bl, cube);
+    total_cost += dist(EdgeCubelet::BR, cube.edges.br, cube);
+
+    // divide by three, rounded up
+    (total_cost + 2) / 3
+}
+
 pub fn make_heuristic(max_depth: usize) -> impl Heuristic<RediCube> {
-    bounded_cache::<RediCube>(max_depth)
+    let cache = bounded_cache::<RediCube>(max_depth);
+    RediHeuristic {
+        bounded_cache: cache,
+        heuristic_hits: Default::default(),
+        heuristic_misses: Default::default(),
+    }
 }
 
 impl SimpleStartState for RediCube {
