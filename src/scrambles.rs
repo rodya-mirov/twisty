@@ -36,7 +36,7 @@ pub fn bulk_scramble<
 
             let c = completed.fetch_add(1, Ordering::SeqCst);
             let c = c + 1; // fetch_add gets the OLD value
-            if c % 1000 == 0 {
+            if c % 100 == 0 {
                 let elapsed = start.elapsed();
                 let elapsed_ms = elapsed.as_secs_f32() * 1000.0;
                 let rate = elapsed_ms / (c as f32);

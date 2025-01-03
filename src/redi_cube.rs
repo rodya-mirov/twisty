@@ -1,3 +1,4 @@
+#[cfg(feature = "hit_rate")]
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use derive_more::Display;
@@ -370,10 +371,13 @@ impl Solvable for RediCube {
 // TODO: generify this somehow so I can use it in other places, if it works
 struct RediHeuristic {
     bounded_cache: BoundedStateCache<u64>,
+    #[cfg(feature = "hit_rate")]
     heuristic_hits: AtomicUsize,
+    #[cfg(feature = "hit_rate")]
     heuristic_misses: AtomicUsize,
 }
 
+#[cfg(feature = "hit_rate")]
 impl Drop for RediHeuristic {
     fn drop(&mut self) {
         let hits = self.heuristic_hits.load(Ordering::Relaxed);
@@ -387,6 +391,8 @@ impl Drop for RediHeuristic {
 
 impl Heuristic<RediCube> for RediHeuristic {
     fn estimated_remaining_cost(&self, t: &RediCube) -> usize {
+        // turns out this hashmap lookup is still the pain point; more efficient packing or lookups
+        // may help performance further
         if let Some(known_cost) = self.bounded_cache.remaining_cost_if_known(t) {
             return known_cost;
         }
@@ -394,10 +400,13 @@ impl Heuristic<RediCube> for RediHeuristic {
         let fb = self.bounded_cache.fallback_depth();
         let heuristic = dist_heuristic(t);
 
-        if heuristic > fb {
-            self.heuristic_hits.fetch_add(1, Ordering::Relaxed);
-        } else {
-            self.heuristic_misses.fetch_add(1, Ordering::Relaxed);
+        #[cfg(feature = "hit_rate")]
+        {
+            if heuristic > fb {
+                self.heuristic_hits.fetch_add(1, Ordering::Relaxed);
+            } else {
+                self.heuristic_misses.fetch_add(1, Ordering::Relaxed);
+            }
         }
 
         fb.max(heuristic)
@@ -448,170 +457,138 @@ fn dist(source_position: EdgeCubelet, goal_position: EdgeCubelet, cube: &RediCub
     match goal_position {
         EdgeCubelet::UF => {
             // using this as a baseline, computed very carefully by hand
-            let left_corner = cube.corners.ufl;
-            let right_corner = cube.corners.ufr;
             match source_position {
-                EdgeCubelet::UF => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UF => in_place_cost(cube.corners.ufl, cube.corners.ufr),
                 EdgeCubelet::DB => 3,
-                EdgeCubelet::UL => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::FL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UR => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::FR => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::UL => one_off_cost(cube.corners.ufl, CornerOrientation::CCW),
+                EdgeCubelet::FL => one_off_cost(cube.corners.ufl, CornerOrientation::CW),
+                EdgeCubelet::UR => one_off_cost(cube.corners.ufr, CornerOrientation::CW),
+                EdgeCubelet::FR => one_off_cost(cube.corners.ufr, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::UL => {
             // rotation is y (or y', i can never remember the notation) from UF
-            let left_corner = cube.corners.ubl;
-            let right_corner = cube.corners.ufl;
             match source_position {
-                EdgeCubelet::UL => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UL => in_place_cost(cube.corners.ubl, cube.corners.ufl),
                 EdgeCubelet::DR => 3,
-                EdgeCubelet::UB => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::BL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UF => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::FL => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::UB => one_off_cost(cube.corners.ubl, CornerOrientation::CCW),
+                EdgeCubelet::BL => one_off_cost(cube.corners.ubl, CornerOrientation::CW),
+                EdgeCubelet::UF => one_off_cost(cube.corners.ufl, CornerOrientation::CW),
+                EdgeCubelet::FL => one_off_cost(cube.corners.ufl, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::UR => {
             // rotation is y (or y', i can never remember the notation) from UF
-            let left_corner = cube.corners.ufr;
-            let right_corner = cube.corners.ubr;
             match source_position {
-                EdgeCubelet::UR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UR => in_place_cost(cube.corners.ufr, cube.corners.ubr),
                 EdgeCubelet::DL => 3,
-                EdgeCubelet::UF => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::FR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UB => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::BR => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::UF => one_off_cost(cube.corners.ufr, CornerOrientation::CCW),
+                EdgeCubelet::FR => one_off_cost(cube.corners.ufr, CornerOrientation::CW),
+                EdgeCubelet::UB => one_off_cost(cube.corners.ubr, CornerOrientation::CW),
+                EdgeCubelet::BR => one_off_cost(cube.corners.ubr, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::UB => {
             // rotation is basically y2 from UF
-            let left_corner = cube.corners.ubr;
-            let right_corner = cube.corners.ubl;
             match source_position {
-                EdgeCubelet::UB => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::UB => in_place_cost(cube.corners.ubr, cube.corners.ubl),
                 EdgeCubelet::DF => 3,
-                EdgeCubelet::UR => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::BR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UL => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::BL => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::UR => one_off_cost(cube.corners.ubr, CornerOrientation::CCW),
+                EdgeCubelet::BR => one_off_cost(cube.corners.ubr, CornerOrientation::CW),
+                EdgeCubelet::UL => one_off_cost(cube.corners.ubl, CornerOrientation::CW),
+                EdgeCubelet::BL => one_off_cost(cube.corners.ubl, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::DF => {
             // rotation is basically z2 from UF
-            let left_corner = cube.corners.dfl;
-            let right_corner = cube.corners.dfr;
             match source_position {
-                EdgeCubelet::DF => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DF => in_place_cost(cube.corners.dfl, cube.corners.dfr),
                 EdgeCubelet::UB => 3,
-                EdgeCubelet::DR => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::FR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DL => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::FL => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::DR => one_off_cost(cube.corners.dfl, CornerOrientation::CCW),
+                EdgeCubelet::FR => one_off_cost(cube.corners.dfl, CornerOrientation::CW),
+                EdgeCubelet::DL => one_off_cost(cube.corners.dfr, CornerOrientation::CW),
+                EdgeCubelet::FL => one_off_cost(cube.corners.dfr, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::DL => {
             // rotation is basically z2 from UL
-            let left_corner = cube.corners.dfl;
-            let right_corner = cube.corners.dbl;
             match source_position {
-                EdgeCubelet::DL => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DL => in_place_cost(cube.corners.dfl, cube.corners.dbl),
                 EdgeCubelet::UR => 3,
-                EdgeCubelet::DF => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::FL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DB => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::BL => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::DF => one_off_cost(cube.corners.dfl, CornerOrientation::CCW),
+                EdgeCubelet::FL => one_off_cost(cube.corners.dfl, CornerOrientation::CW),
+                EdgeCubelet::DB => one_off_cost(cube.corners.dbl, CornerOrientation::CW),
+                EdgeCubelet::BL => one_off_cost(cube.corners.dbl, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::DR => {
             // rotation is basically z2 from UR
-            let left_corner = cube.corners.dbr;
-            let right_corner = cube.corners.dfr;
             match source_position {
-                EdgeCubelet::DR => in_place_cost(left_corner, right_corner),
+                EdgeCubelet::DR => in_place_cost(cube.corners.dbr, cube.corners.dfr),
                 EdgeCubelet::UL => 3,
-                EdgeCubelet::DB => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::BR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DF => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::FR => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::DB => one_off_cost(cube.corners.dbr, CornerOrientation::CCW),
+                EdgeCubelet::BR => one_off_cost(cube.corners.dbr, CornerOrientation::CW),
+                EdgeCubelet::DF => one_off_cost(cube.corners.dfr, CornerOrientation::CW),
+                EdgeCubelet::FR => one_off_cost(cube.corners.dfr, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         EdgeCubelet::DB => {
             // rotation is basically z2 from UB, or x2 from UF
-            let left_corner = cube.corners.dbl;
-            let right_corner = cube.corners.dbr;
             match source_position {
                 EdgeCubelet::DB => in_place_cost(cube.corners.dbl, cube.corners.dbr),
                 EdgeCubelet::UF => 3,
                 // from UL, FL, UR, FR
-                EdgeCubelet::DL => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::BL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DR => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::BR => one_off_cost(right_corner, CornerOrientation::CCW),
+                EdgeCubelet::DL => one_off_cost(cube.corners.dbl, CornerOrientation::CCW),
+                EdgeCubelet::BL => one_off_cost(cube.corners.dbl, CornerOrientation::CW),
+                EdgeCubelet::DR => one_off_cost(cube.corners.dbr, CornerOrientation::CW),
+                EdgeCubelet::BR => one_off_cost(cube.corners.dbr, CornerOrientation::CCW),
                 _ => 2,
             }
         }
         // for mid layer, when choosing which face gets rotated to top, prefer F/B over L/R
-        EdgeCubelet::FL => {
-            let left_corner = cube.corners.ufl;
-            let right_corner = cube.corners.dfl;
-            match source_position {
-                EdgeCubelet::FL => in_place_cost(cube.corners.dbl, cube.corners.dbr),
-                EdgeCubelet::BR => 3,
-                EdgeCubelet::UF => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::UL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DF => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::DL => one_off_cost(right_corner, CornerOrientation::CCW),
-                _ => 2,
-            }
-        }
-        EdgeCubelet::FR => {
-            let left_corner = cube.corners.dfr;
-            let right_corner = cube.corners.ufr;
-            match source_position {
-                EdgeCubelet::FR => in_place_cost(left_corner, right_corner),
-                EdgeCubelet::BL => 3,
-                EdgeCubelet::DF => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::DR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UF => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::UR => one_off_cost(right_corner, CornerOrientation::CCW),
-                _ => 2,
-            }
-        }
-        EdgeCubelet::BL => {
-            let left_corner = cube.corners.dbl;
-            let right_corner = cube.corners.ubl;
-            match source_position {
-                EdgeCubelet::BL => in_place_cost(left_corner, right_corner),
-                EdgeCubelet::FR => 3,
-                EdgeCubelet::DB => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::DL => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::UB => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::UL => one_off_cost(right_corner, CornerOrientation::CCW),
-                _ => 2,
-            }
-        }
-        EdgeCubelet::BR => {
-            let left_corner = cube.corners.ubr;
-            let right_corner = cube.corners.dbr;
-            match source_position {
-                EdgeCubelet::BR => in_place_cost(left_corner, right_corner),
-                EdgeCubelet::FL => 3,
-                EdgeCubelet::UB => one_off_cost(left_corner, CornerOrientation::CCW),
-                EdgeCubelet::UR => one_off_cost(left_corner, CornerOrientation::CW),
-                EdgeCubelet::DB => one_off_cost(right_corner, CornerOrientation::CW),
-                EdgeCubelet::DR => one_off_cost(right_corner, CornerOrientation::CCW),
-                _ => 2,
-            }
-        }
+        EdgeCubelet::FL => match source_position {
+            EdgeCubelet::FL => in_place_cost(cube.corners.dbl, cube.corners.dbr),
+            EdgeCubelet::BR => 3,
+            EdgeCubelet::UF => one_off_cost(cube.corners.ufl, CornerOrientation::CCW),
+            EdgeCubelet::UL => one_off_cost(cube.corners.ufl, CornerOrientation::CW),
+            EdgeCubelet::DF => one_off_cost(cube.corners.dfl, CornerOrientation::CW),
+            EdgeCubelet::DL => one_off_cost(cube.corners.dfl, CornerOrientation::CCW),
+            _ => 2,
+        },
+        EdgeCubelet::FR => match source_position {
+            EdgeCubelet::FR => in_place_cost(cube.corners.dfr, cube.corners.ufr),
+            EdgeCubelet::BL => 3,
+            EdgeCubelet::DF => one_off_cost(cube.corners.dfr, CornerOrientation::CCW),
+            EdgeCubelet::DR => one_off_cost(cube.corners.dfr, CornerOrientation::CW),
+            EdgeCubelet::UF => one_off_cost(cube.corners.ufr, CornerOrientation::CW),
+            EdgeCubelet::UR => one_off_cost(cube.corners.ufr, CornerOrientation::CCW),
+            _ => 2,
+        },
+        EdgeCubelet::BL => match source_position {
+            EdgeCubelet::BL => in_place_cost(cube.corners.dbl, cube.corners.ubl),
+            EdgeCubelet::FR => 3,
+            EdgeCubelet::DB => one_off_cost(cube.corners.dbl, CornerOrientation::CCW),
+            EdgeCubelet::DL => one_off_cost(cube.corners.dbl, CornerOrientation::CW),
+            EdgeCubelet::UB => one_off_cost(cube.corners.ubl, CornerOrientation::CW),
+            EdgeCubelet::UL => one_off_cost(cube.corners.ubl, CornerOrientation::CCW),
+            _ => 2,
+        },
+        EdgeCubelet::BR => match source_position {
+            EdgeCubelet::BR => in_place_cost(cube.corners.ubr, cube.corners.dbr),
+            EdgeCubelet::FL => 3,
+            EdgeCubelet::UB => one_off_cost(cube.corners.ubr, CornerOrientation::CCW),
+            EdgeCubelet::UR => one_off_cost(cube.corners.ubr, CornerOrientation::CW),
+            EdgeCubelet::DB => one_off_cost(cube.corners.dbr, CornerOrientation::CW),
+            EdgeCubelet::DR => one_off_cost(cube.corners.dbr, CornerOrientation::CCW),
+            _ => 2,
+        },
     }
 }
 
@@ -626,7 +603,11 @@ fn dist_heuristic(cube: &RediCube) -> usize {
     //      at least three moves to fix it; this is true for basically the same reason
     // each actual move can move at most three edges at a time, so (super sloppy) can add up
     // all those numbers, divide by three (round up) and that's the minimum number of twists to
-    // solve the whole puzzle
+    // solve the whole puzzle.
+    //
+    // Tradeoff is correctly upping the cost helps discard bad paths, but if the heuristic is
+    // expensive to compute, it's better not to bother; exploring more paths very quickly can be
+    // better than exploring fewer paths more slowly (operative word "can be")
     //
     // For a "random" puzzle these rules give costs as follows:
     //  - Rule 1 only:  19 edge moves (cost rounds up to 7)
@@ -674,7 +655,9 @@ pub fn make_heuristic(max_depth: usize) -> impl Heuristic<RediCube> {
     let cache = bounded_cache::<RediCube>(max_depth);
     RediHeuristic {
         bounded_cache: cache,
+        #[cfg(feature = "hit_rate")]
         heuristic_hits: Default::default(),
+        #[cfg(feature = "hit_rate")]
         heuristic_misses: Default::default(),
     }
 }

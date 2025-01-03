@@ -17,7 +17,6 @@ impl<H: Hash + Eq> BoundedStateCache<H> {
         self.fallback_depth
     }
 
-    #[inline]
     pub fn remaining_cost_if_known<S: State<UniqueKey = H>>(&self, t: &S) -> Option<usize> {
         self.stored.get(&t.uniq_key()).copied()
     }
